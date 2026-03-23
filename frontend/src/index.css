@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* SLIIT Official Colors [cite: 3] */
+    --sliit-blue: #00538E;
+    --sliit-gold: #F7941D;
+
+    /* Dark Theme Palette */
+    --bg-dark: #050b18;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+  }
+
+  body {
+    @apply bg-[#050b18] text-white antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer components {
+  /* Member 4: Task Planner & Group Cards [cite: 172, 182] */
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl transition-all duration-300;
+  }
+
+  .glass-card:hover {
+    @apply -translate-y-1 border-white/20;
+  }
+
+  /* Member 1: Admin & Auth Buttons [cite: 21, 30] */
+  .btn-sliit-primary {
+    @apply bg-[#00538E] hover:bg-[#0072c6] text-white font-semibold py-2 px-6 rounded-lg transition-all shadow-[0_0_15px_rgba(0,83,142,0.4)];
+  }
+
+  /* Member 2 & 3: Status Accents [cite: 73, 125] */
+  .accent-gold {
+    @apply text-[#F7941D] drop-shadow-[0_0_8px_rgba(247,148,29,0.3)];
+  }
+
+  /* Input Fields for all Modules [cite: 68, 121, 168, 220] */
+  .uni-input {
+    @apply w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:outline-none focus:border-[#00538E] focus:ring-1 focus:ring-[#00538E] transition-all;
+  }
+}
