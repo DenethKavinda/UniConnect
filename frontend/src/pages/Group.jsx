@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import groupService from '../services/groupService';
 
 const FACULTY_FALLBACK = 'General';
@@ -283,14 +282,8 @@ const Group = () => {
 								</div>
 								<h2 className="text-2xl font-semibold text-slate-100">No groups found</h2>
 								<p className="mt-2 text-slate-400 max-w-md">
-									Try a different faculty filter or create a brand-new community for your department.
+									Try a different faculty filter and check back for new communities in your department.
 								</p>
-								<Link
-									to="/groups/create"
-									className="mt-6 h-11 px-6 rounded-xl font-semibold text-slate-900 bg-[#EAB308] hover:brightness-110 transition inline-flex items-center"
-								>
-									Create Group
-								</Link>
 							</div>
 						) : (
 							<div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-5">
