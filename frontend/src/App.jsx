@@ -1,60 +1,20 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
-
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import AdminDashboard from "./pages/AdminDashboard";
-import UserManagementPage from "./pages/UserManagementPage";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
 import Dashboard from "./pages/Dashboard";
-import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
-
-          {/* public routes */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-
-          {/* student/admin dashboard */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={["student", "admin"]}>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* all admins can access */}
-          <Route
-            path="/adminDashboard"
-            element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* only admin role + specific username */}
-          <Route
-            path="/userManagement"
-            element={
-              <ProtectedRoute
-                allowedRoles={["admin"]}
-                allowedEmails={["yomal@gmail.com", "admin@uniconnect.com"]}
-              >
-                <UserManagementPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </BrowserRouter>
+      <Router>
+        <Navbar />
+        <main className="pt-[70px] min-h-screen">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="*" element={<Dashboard />} />
+          </Routes>
+        </main>
+      </Router>
     </AuthProvider>
   );
 }
