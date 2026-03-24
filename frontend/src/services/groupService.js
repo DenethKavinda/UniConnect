@@ -14,6 +14,11 @@ const groupService = {
   getLiveActivity: async () => {
     const response = await api.get('/groups/activity');
     return response.data;
+  },
+
+  createGroup: async (payload) => {
+    const response = await api.post('/groups', payload);
+    return response.data;
   }
 };
 
