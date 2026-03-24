@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/NavBar';
 import Dashboard from './pages/Dashboard';
 import Group from './pages/Group';
-import CreateGroup from './pages/CreateGroup';
 import { AuthProvider } from './context/AuthContext';
 import Discussions from './pages/Discussions';
 import DiscussionDetail from './pages/DiscussionDetail';
