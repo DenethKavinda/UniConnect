@@ -1,53 +1,60 @@
-import React, { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
+
+  // Effect to handle scroll background change
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const navLinks = [
-    { path: '/', label: 'Home' },
-    { path: '/materials', label: 'Materials' },
-    { path: '/groups', label: 'Groups' },
-    { path: '/posts', label: 'Discussions' },
+    { path: "/", label: "Home" },
+    { path: "/materials", label: "Materials" },
+    { path: "/groups", label: "Groups" },
+    { path: "/posts", label: "Discussions" },
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur h-[70px] z-50 border-b border-gray-200">
+    <nav
+      className={`fixed top-0 left-0 right-0 h-[70px] z-[1000] transition-all duration-300 ${
+        scrolled
+          ? "bg-[#0a0d17]/85 backdrop-blur-xl border-b border-white/10 shadow-2xl"
+          : "bg-transparent"
+      }`}
+    >
       <div className="max-w-7xl mx-auto h-full flex items-center justify-between px-6">
-
         {/* Brand Logo */}
-        <Link
-          to="/"
-          className="flex items-center gap-2 group"
-        >
+        <Link to="/" className="flex items-center gap-2 group">
           <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
             U
           </div>
-          <span className="text-lg font-bold text-gray-900">
-            Uni<span className="text-blue-600">Connect</span>
+          <span className="text-xl font-bold tracking-tight text-white">
+            Uni<span className="text-blue-400">Connect</span>
           </span>
         </Link>
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
-            <NavLink
+            <Link
               key={link.path}
               to={link.path}
-              className={({ isActive }) =>
-                `font-medium transition-colors ${
-                  isActive ? 'text-blue-600' : 'text-gray-600 hover:text-blue-600'
-                }`
-              }
+              className="text-gray-600 font-medium hover:text-blue-600 transition-colors"
             >
               {link.label}
-            </NavLink>
+            </Link>
           ))}
 
           {/* Login Button */}
           <Link
             to="/login"
-            className="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            className="bg-amber-500 text-[#0a0d17] px-6 py-2.5 rounded-full text-sm font-bold hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20 hover:-translate-y-0.5"
           >
             Login
           </Link>
@@ -58,7 +65,7 @@ const Navbar = () => {
           className="md:hidden text-2xl text-gray-700"
           onClick={() => setMobileOpen(!mobileOpen)}
         >
-          {mobileOpen ? '✕' : '☰'}
+          <span className="text-2xl">{mobileOpen ? "✕" : "☰"}</span>
         </button>
 
         {/* Mobile Navigation */}
@@ -66,20 +73,14 @@ const Navbar = () => {
           <div className="absolute top-[70px] left-0 right-0 bg-white border-b border-gray-200 md:hidden">
             <div className="flex flex-col p-4 gap-2">
               {navLinks.map((link) => (
-                <NavLink
+                <Link
                   key={link.path}
                   to={link.path}
-                  className={({ isActive }) =>
-                    `px-4 py-2 rounded transition-colors ${
-                      isActive
-                        ? 'text-blue-700 bg-blue-100'
-                        : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
-                    }`
-                  }
+                  className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                   onClick={() => setMobileOpen(false)}
                 >
                   {link.label}
-                </NavLink>
+                </Link>
               ))}
               <Link
                 to="/login"
