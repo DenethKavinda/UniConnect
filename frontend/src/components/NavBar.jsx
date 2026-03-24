@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -31,13 +31,17 @@ const Navbar = () => {
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
-            <Link
+            <NavLink
               key={link.path}
               to={link.path}
-              className="text-gray-600 font-medium hover:text-blue-600 transition-colors"
+              className={({ isActive }) =>
+                `font-medium transition-colors ${
+                  isActive ? 'text-blue-600' : 'text-gray-600 hover:text-blue-600'
+                }`
+              }
             >
               {link.label}
-            </Link>
+            </NavLink>
           ))}
 
           {/* Login Button */}
@@ -62,14 +66,20 @@ const Navbar = () => {
           <div className="absolute top-[70px] left-0 right-0 bg-white border-b border-gray-200 md:hidden">
             <div className="flex flex-col p-4 gap-2">
               {navLinks.map((link) => (
-                <Link
+                <NavLink
                   key={link.path}
                   to={link.path}
-                  className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                  className={({ isActive }) =>
+                    `px-4 py-2 rounded transition-colors ${
+                      isActive
+                        ? 'text-blue-700 bg-blue-100'
+                        : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+                    }`
+                  }
                   onClick={() => setMobileOpen(false)}
                 >
                   {link.label}
-                </Link>
+                </NavLink>
               ))}
               <Link
                 to="/login"
