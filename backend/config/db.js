@@ -1,12 +1,18 @@
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
+  const mongoUri = process.env.MONGO_URI || process.env.DB_URI;
+
+  if (!mongoUri) {
+    throw new Error('Missing MongoDB URI. Set MONGO_URI or DB_URI in backend/.env');
+  }
+
   try {
-    await mongoose.connect(process.env.DB_URI);
+    await mongoose.connect(mongoUri);
     console.log('MongoDB connected');
   } catch (error) {
     console.error('Database connection failed:', error);
-    process.exit(1);
+    throw error;
   }
 };
 
