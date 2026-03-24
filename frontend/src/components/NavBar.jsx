@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const location = useLocation();
 
   // Effect to handle scroll background change
   useEffect(() => {
@@ -40,22 +39,21 @@ const Navbar = () => {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-2">
-          {navLinks.map((link) => {
-            const isActive = location.pathname === link.path;
-            return (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+          {navLinks.map((link) => (
+            <NavLink
+              key={link.path}
+              to={link.path}
+              className={({ isActive }) =>
+                `px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                   isActive 
                     ? 'text-amber-400 bg-amber-400/10 border border-amber-400/20' 
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+                }`
+              }
+            >
+              {link.label}
+            </NavLink>
+          ))}
           
           <div className="h-5 w-[1px] bg-white/10 mx-3" />
 
@@ -81,14 +79,20 @@ const Navbar = () => {
           mobileOpen ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0 pointer-events-none'
         }`}>
           {navLinks.map((link) => (
-            <Link
+            <NavLink
               key={link.path}
               to={link.path}
-              className="text-gray-300 font-semibold hover:text-amber-400 py-2 border-b border-white/5"
+              className={({ isActive }) =>
+                `font-semibold py-2 px-2 rounded transition-colors border-b border-white/5 ${
+                  isActive
+                    ? 'text-amber-400'
+                    : 'text-gray-300 hover:text-amber-400'
+                }`
+              }
               onClick={() => setMobileOpen(false)}
             >
               {link.label}
-            </Link>
+            </NavLink>
           ))}
           <Link 
             to="/login"
