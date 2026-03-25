@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import groupService from '../services/groupService';
 
 const FACULTY_FALLBACK = 'General';
@@ -209,10 +210,20 @@ const Group = () => {
 		>
 			<div className="mx-auto w-full max-w-[1880px] space-y-6">
 				<header className="rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-5 md:p-7">
-					<h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-50">UniConnect Groups</h1>
-					<p className="mt-2 text-slate-300 max-w-2xl">
-						Discover communities, collaborate with classmates, and join your faculty network in real time.
-					</p>
+					<div className="flex flex-wrap items-start justify-between gap-4">
+						<div>
+							<h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-50">UniConnect Groups</h1>
+							<p className="mt-2 text-slate-300 max-w-2xl">
+								Discover communities, collaborate with classmates, and join your faculty network in real time.
+							</p>
+						</div>
+						<Link
+							to="/groups/create"
+							className="h-11 px-5 rounded-xl font-semibold text-slate-900 bg-[#EAB308] hover:brightness-110 transition inline-flex items-center"
+						>
+							Create Group
+						</Link>
+					</div>
 
 					<div className="mt-5">
 						<div className="h-12 rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl flex items-center px-4 focus-within:border-blue-400/70 transition-colors">
@@ -284,9 +295,9 @@ const Group = () => {
 								<p className="mt-2 text-slate-400 max-w-md">
 									Try a different faculty filter or create a brand-new community for your department.
 								</p>
-								<button className="mt-6 h-11 px-6 rounded-xl font-semibold text-slate-900 bg-[#EAB308] hover:brightness-110 transition">
+								<Link to="/groups/create" className="mt-6 h-11 px-6 rounded-xl font-semibold text-slate-900 bg-[#EAB308] hover:brightness-110 transition inline-flex items-center">
 									Create Group
-								</button>
+								</Link>
 							</div>
 						) : (
 							<div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-5">
