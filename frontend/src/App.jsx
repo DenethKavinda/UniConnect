@@ -1,33 +1,3 @@
-// import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-// import Navbar from './components/Navbar';
-// import Dashboard from './pages/Dashboard';
-// import AdminDashboard from "./pages/AdminDashboard";
-// import UserManagementPage from "./pages/UserManagementPage";
-// import { AuthProvider } from './context/AuthContext';
-
-// function App() {
-//   return (
-//     <AuthProvider>
-//       <Router>
-//         <Navbar />
-//         <main className="pt-[70px] min-h-screen">
-//           <Routes>
-//             <Route path="/" element={<Dashboard />} />
-//             <Route path="*" element={<Dashboard />} />
-//             <Route path="adminDashboard" element={<AdminDashboard />} />
-//             <Route path="userManagementPage" element={<UserManagementPage />} />
-            
-//           </Routes>
-//         </main>
-//       </Router>
-//     </AuthProvider>
-//   );
-// }
-
-// export default App;
-
-
-
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -35,7 +5,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserManagementPage from "./pages/UserManagementPage";
-import Dashboard from "./pages/Dashboard"; // student dashboard
+import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -49,7 +19,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* student protected route */}
+          {/* student/admin dashboard */}
           <Route
             path="/dashboard"
             element={
@@ -59,7 +29,7 @@ function App() {
             }
           />
 
-          {/* admin protected routes */}
+          {/* all admins can access */}
           <Route
             path="/adminDashboard"
             element={
@@ -69,10 +39,14 @@ function App() {
             }
           />
 
+          {/* only admin role + specific username */}
           <Route
             path="/userManagement"
             element={
-              <ProtectedRoute allowedRoles={["admin"]}>
+              <ProtectedRoute
+                allowedRoles={["admin"]}
+                allowedEmails={["yomal@gmail.com", "admin@uniconnect.com"]}
+              >
                 <UserManagementPage />
               </ProtectedRoute>
             }

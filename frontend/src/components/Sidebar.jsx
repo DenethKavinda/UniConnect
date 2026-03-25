@@ -44,11 +44,10 @@ const menu = [
     path: "",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-        <rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-        <rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-        <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-      </svg>
+      <path d="M2 3.5C2 2.67 2.67 2 3.5 2H13v11H3.5C2.67 13 2 12.33 2 11.5V3.5Z" 
+            stroke="currentColor" strokeWidth="1.4" fill="none"/>
+      <path d="M5 2V13" stroke="currentColor" strokeWidth="1.2" opacity="0.6"/>
+    </svg>
     ),
   },
   {
@@ -56,11 +55,9 @@ const menu = [
     path: "",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-        <rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-        <rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-        <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-      </svg>
+      <path d="M3 3h10v7H6l-3 3V3Z" 
+            stroke="currentColor" strokeWidth="1.4" fill="none"/>
+    </svg>
     ),
   },
   {
@@ -68,11 +65,13 @@ const menu = [
     path: "",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-        <rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-        <rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-        <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-      </svg>
+      <circle cx="5" cy="6" r="2" fill="currentColor"/>
+      <circle cx="11" cy="6" r="2" fill="currentColor" opacity="0.7"/>
+      <path d="M2 13c0-2 2-3.5 3-3.5s3 1.5 3 3.5" 
+            stroke="currentColor" strokeWidth="1.3" fill="none"/>
+      <path d="M8 13c0-1.5 1.5-3 3-3s3 1.5 3 3" 
+            stroke="currentColor" strokeWidth="1.3" fill="none" opacity="0.7"/>
+    </svg>
     ),
   },
 ];

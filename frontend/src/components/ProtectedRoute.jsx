@@ -1,16 +1,34 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-function ProtectedRoute({ children, allowedRoles = [] }) {
+function ProtectedRoute({
+  children,
+  allowedRoles = [],
+  allowedEmails = [],
+}) {
   const { user, token } = useAuth();
 
   if (!token || !user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+  // blocked user check
+  if (user.isBlocked) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // role check
+  const roleAllowed =
+    allowedRoles.length === 0 || allowedRoles.includes(user.role);
+
+  // email check
+  const emailAllowed =
+    allowedEmails.length === 0 || allowedEmails.includes(user.email);
+
+  // if any provided condition fails => deny
+  if (!roleAllowed || !emailAllowed ) {
     if (user.role === "admin") {
-      return <Navigate to="/admin" replace />;
+      return <Navigate to="/adminDashboard" replace />;
     }
 
     if (user.role === "student") {
