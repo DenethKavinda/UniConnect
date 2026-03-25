@@ -1,7 +1,10 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
+import Navbar from './components/NavBar';
 import Dashboard from './pages/Dashboard';
 import { AuthProvider } from './context/AuthContext';
+import Discussions from './pages/Discussions';
+import DiscussionDetail from './pages/DiscussionDetail';
+import CreatePost from './pages/CreatePost';
 
 function App() {
   return (
@@ -11,6 +14,10 @@ function App() {
         <main className="pt-[70px] min-h-screen">
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/posts" element={<Discussions />} />
+            <Route path="/discussions" element={<Discussions />} />
+            <Route path="/posts/new" element={<CreatePost />} />
+            <Route path="/posts/:id" element={<DiscussionDetail />} />
             <Route path="*" element={<Dashboard />} />
           </Routes>
         </main>

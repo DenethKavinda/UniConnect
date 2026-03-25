@@ -15,7 +15,7 @@ const modules = [
     title: 'Forum',
     description: 'Ask questions, share ideas, and participate in academic discussions.',
     icon: 'CH',
-    to: '/forum',
+    to: '/posts',
     gradient: 'from-purple-600 to-pink-600',
     count: '45 Active Threads',
   },
@@ -40,12 +40,12 @@ const Dashboard = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-12 animate-in fade-in duration-700">
-      
+
       {/* 1. Welcome Header */}
       <header className="relative overflow-hidden bg-slate-900 rounded-3xl p-10 mb-10 border border-white/10 shadow-2xl">
         {/* Decorative background glow */}
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-600/20 blur-[100px] rounded-full" />
-        
+
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-widest">

@@ -8,16 +8,16 @@ const Navbar = () => {
     { path: '/', label: 'Home' },
     { path: '/materials', label: 'Materials' },
     { path: '/groups', label: 'Groups' },
-    { path: '/posts', label: 'Posts' },
+    { path: '/posts', label: 'Discussions' },
   ];
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur h-[70px] z-50 border-b border-gray-200">
       <div className="max-w-7xl mx-auto h-full flex items-center justify-between px-6">
-        
+
         {/* Brand Logo */}
-        <Link 
-          to="/" 
+        <Link
+          to="/"
           className="flex items-center gap-2 group"
         >
           <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
@@ -39,9 +39,9 @@ const Navbar = () => {
               {link.label}
             </Link>
           ))}
-          
+
           {/* Login Button */}
-          <Link 
+          <Link
             to="/login"
             className="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
           >
@@ -50,7 +50,7 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Menu Toggle */}
-        <button 
+        <button
           className="md:hidden text-2xl text-gray-700"
           onClick={() => setMobileOpen(!mobileOpen)}
         >
@@ -71,7 +71,7 @@ const Navbar = () => {
                   {link.label}
                 </Link>
               ))}
-              <Link 
+              <Link
                 to="/login"
                 className="px-4 py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 transition-colors text-center"
                 onClick={() => setMobileOpen(false)}

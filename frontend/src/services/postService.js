@@ -4,23 +4,28 @@ import api from './api';
 
 const postService = {
   getAllPosts: async () => {
-    // Implementation
+    const response = await api.get('/posts');
+    return response.data;
   },
 
   getPostById: async (postId) => {
-    // Implementation
+    const response = await api.get(`/posts/${postId}`);
+    return response.data;
   },
 
   createPost: async (postData) => {
-    // Implementation
+    const response = await api.post('/posts', postData);
+    return response.data;
   },
 
   updatePost: async (postId, postData) => {
-    // Implementation
+    const response = await api.put(`/posts/${postId}`, postData);
+    return response.data;
   },
 
   deletePost: async (postId) => {
-    // Implementation
+    const response = await api.delete(`/posts/${postId}`);
+    return response.data;
   }
 };
 
