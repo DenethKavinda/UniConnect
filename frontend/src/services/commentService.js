@@ -1,8 +1,8 @@
 import api from './api';
 
 const commentService = {
-    async getCommentsByPost(postId) {
-        const response = await api.get(`/comments/post/${postId}`);
+    async getCommentsByPost(postId, sort = 'best') {
+        const response = await api.get(`/comments/post/${postId}`, { params: { sort } });
         return response.data;
     },
 
@@ -18,6 +18,11 @@ const commentService = {
 
     async deleteComment(commentId) {
         const response = await api.delete(`/comments/${commentId}`);
+        return response.data;
+    },
+
+    async voteComment(commentId, voteType) {
+        const response = await api.post(`/comments/${commentId}/vote`, { voteType });
         return response.data;
     }
 };

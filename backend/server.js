@@ -10,6 +10,10 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// Route registration
+app.use('/api/posts', require('./routes/posts'));
+app.use('/api/comments', require('./routes/comments'));
+
 // MongoDB Connection
 mongoose
   .connect(process.env.MONGO_URI, {

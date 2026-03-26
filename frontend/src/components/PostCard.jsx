@@ -1,94 +1,123 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { FiMessageSquare, FiShare2 } from 'react-icons/fi';
+import VoteButtons from './VoteButtons';
+import SubjectBadge from './SubjectBadge';
+import { timeAgo } from '../utils/timeAgo';
 
 const getAuthorName = (author) => {
-    if (!author) return 'Unknown Author';
-    if (typeof author === 'string') return author;
-    return author.name || author.username || author.email || 'Unknown Author';
+  if (!author) return 'Unknown Author';
+  if (typeof author === 'string') return author;
+  return author.name || author.username || author.email || 'Unknown Author';
 };
 
-const getAuthorId = (author) => {
-    if (!author) return null;
-    if (typeof author === 'string') return author;
-    return author._id || author.id || null;
-};
+const PostCard = ({ post, onVote, onClick }) => {
+  const [userVote, setUserVote] = useState(null);
+  const [localScore, setLocalScore] = useState(post.voteScore || post.upvotes?.length - post.downvotes?.length || 0);
+  const [upvoted, setUpvoted] = useState(false);
 
-const formatDate = (value) => {
-    if (!value) return 'Unknown date';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return 'Unknown date';
-    return date.toLocaleString();
-};
+  const title = post.title || 'Untitled';
+  const authorName = getAuthorName(post.author);
+  const subject = post.subject || 'General';
+  const pinned = post.isPinned || false;
 
-const PostCard = ({ post, currentUser, onDelete }) => {
-    const [upvotes, setUpvotes] = useState(post.likeCount || post.upvotes || 0);
+  const handleUpvote = (e) => {
+    e.stopPropagation();
+    const newVote = userVote === 'up' ? 'none' : 'up';
+    setUserVote(newVote);
+    
+    if (newVote === 'up') {
+      setLocalScore(localScore + (userVote === 'down' ? 2 : 1));
+    } else if (newVote === 'none' && userVote === 'up') {
+      setLocalScore(localScore - 1);
+    }
+    
+    if (onVote) onVote(post._id, newVote);
+  };
 
-    const userId = currentUser?._id || currentUser?.id || null;
-    const ownerId = useMemo(() => getAuthorId(post.author), [post.author]);
-    const isOwner = Boolean(userId && ownerId && userId === ownerId);
+  const handleDownvote = (e) => {
+    e.stopPropagation();
+    const newVote = userVote === 'down' ? 'none' : 'down';
+    setUserVote(newVote);
+    
+    if (newVote === 'down') {
+      setLocalScore(localScore - (userVote === 'up' ? 2 : 1));
+    } else if (newVote === 'none' && userVote === 'down') {
+      setLocalScore(localScore + 1);
+    }
+    
+    if (onVote) onVote(post._id, newVote);
+  };
 
-    const title = post.title || 'Untitled question';
-    const course = post.course || post.courseCode || 'General';
-    const authorName = getAuthorName(post.author);
+  return (
+    <article
+      onClick={() => onClick?.(post._id)}
+      className="rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-4 flex gap-3 hover:border-blue-400/30 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+    >
+      {/* Vote Column */}
+      <div className="flex flex-col items-center gap-1 min-w-[40px]">
+        <VoteButtons
+          score={localScore}
+          userVote={userVote}
+          onUpvote={handleUpvote}
+          onDownvote={handleDownvote}
+          vertical={true}
+          size="sm"
+        />
+      </div>
 
-    return (
-        <article className="glass-card">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <span className="text-xs uppercase tracking-wider text-slate-300 bg-white/10 rounded-full px-3 py-1">
-                    {course}
-                </span>
-                <button
-                    type="button"
-                    onClick={() => setUpvotes((prev) => prev + 1)}
-                    className="text-sm text-[#F7941D] hover:text-[#ffad4f] transition-colors"
-                >
-                    Upvote ({upvotes})
-                </button>
-            </div>
+      {/* Content Area */}
+      <div className="flex-1 min-w-0">
+        {/* Header */}
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          <SubjectBadge subject={subject} />
+          <span className="text-xs text-slate-400">•</span>
+          <span className="text-xs text-slate-400">u/{authorName}</span>
+          <span className="text-xs text-slate-400">•</span>
+          <span className="text-xs text-slate-400">{timeAgo(post.createdAt)}</span>
+          {pinned && <span className="text-xs">📌</span>}
+        </div>
 
-            <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
-            <p className="text-sm text-slate-300 mb-6 line-clamp-2">{post.content || post.description || 'No description provided.'}</p>
+        {/* Title */}
+        <h3 className="text-lg font-semibold text-slate-100 line-clamp-2 mb-1">
+          {title}
+        </h3>
 
-            <div className="text-sm text-slate-400 space-y-1 mb-6">
-                <p>By {authorName}</p>
-                <p>{formatDate(post.createdAt)}</p>
-            </div>
+        {/* Content Preview */}
+        <p className="text-sm text-slate-400 line-clamp-2 mb-2">
+          {post.content}
+        </p>
 
-            <div className="flex flex-wrap gap-2">
-                <Link
-                    to={`/posts/${post._id || post.id}`}
-                    className="btn-sliit-primary text-sm py-2 px-4"
-                >
-                    View Discussion
-                </Link>
+        {/* Tags */}
+        {post.tags && post.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {post.tags.slice(0, 3).map((tag, idx) => (
+              <span
+                key={idx}
+                className="bg-white/5 border border-white/10 text-slate-400 text-xs px-2 py-0.5 rounded-full"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
 
-                {isOwner ? (
-                    <>
-                        <Link
-                            to={`/posts/${post._id || post.id}/edit`}
-                            className="px-4 py-2 rounded-lg text-sm font-semibold border border-[#00538E] text-blue-300 hover:bg-[#00538E]/20 transition-colors"
-                        >
-                            Edit
-                        </Link>
-                        <button
-                            type="button"
-                            onClick={() => onDelete(post._id || post.id)}
-                            className="px-4 py-2 rounded-lg text-sm font-semibold border border-red-400/40 text-red-300 hover:bg-red-500/10 transition-colors"
-                        >
-                            Delete
-                        </button>
-                    </>
-                ) : (
-                    <button
-                        type="button"
-                        className="px-4 py-2 rounded-lg text-sm font-semibold border border-[#F7941D]/40 text-[#F7941D] hover:bg-[#F7941D]/10 transition-colors"
-                    >
-                        Report
-                    </button>
-                )}
-            </div>
-        </article>
-    );
+        {/* Footer Actions */}
+        <div className="flex items-center gap-4 text-slate-500 text-sm mt-2">
+          <div className="flex items-center gap-1 hover:text-slate-300">
+            <FiMessageSquare size={16} />
+            <span>{post.commentCount || 0}</span>
+          </div>
+          <button
+            className="flex items-center gap-1 hover:text-slate-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <FiShare2 size={16} />
+            <span>Share</span>
+          </button>
+        </div>
+      </div>
+    </article>
+  );
 };
 
 export default PostCard;
