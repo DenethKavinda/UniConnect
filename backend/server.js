@@ -10,10 +10,13 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+<<<<<<< HEAD
 // Route registration
 app.use("/api/posts", require("./routes/posts"));
 app.use("/api/comments", require("./routes/comments"));
 
+=======
+>>>>>>> main
 // Test route
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
