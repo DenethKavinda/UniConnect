@@ -1,12 +1,11 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
-  // Effect to handle scroll background change
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
@@ -29,7 +28,6 @@ const Navbar = () => {
       }`}
     >
       <div className="max-w-7xl mx-auto h-full flex items-center justify-between px-6">
-        {/* Brand Logo */}
         <Link to="/" className="flex items-center gap-2 group">
           <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
             U
@@ -39,7 +37,6 @@ const Navbar = () => {
           </span>
         </Link>
 
-        {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <Link
@@ -50,8 +47,6 @@ const Navbar = () => {
               {link.label}
             </Link>
           ))}
-
-          {/* Login Button */}
           <Link
             to="/login"
             className="bg-amber-500 text-[#0a0d17] px-6 py-2.5 rounded-full text-sm font-bold hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20 hover:-translate-y-0.5"
@@ -60,7 +55,6 @@ const Navbar = () => {
           </Link>
         </div>
 
-        {/* Mobile Menu Toggle */}
         <button
           className="md:hidden text-2xl text-gray-700"
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -68,7 +62,6 @@ const Navbar = () => {
           <span className="text-2xl">{mobileOpen ? "✕" : "☰"}</span>
         </button>
 
-        {/* Mobile Navigation */}
         {mobileOpen && (
           <div className="absolute top-[70px] left-0 right-0 bg-white border-b border-gray-200 md:hidden">
             <div className="flex flex-col p-4 gap-2">

@@ -11,7 +11,6 @@ function App() {
         <main className="pt-[70px] min-h-screen">
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/groups" element={<Group />} />
             <Route path="*" element={<Dashboard />} />
           </Routes>
         </main>
