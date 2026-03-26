@@ -3,6 +3,12 @@ require("dotenv").config(); // Load environment variables from .env
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
+const postRoutes = require('./routes/posts');
+const commentRoutes = require('./routes/comments');
+const groupRoutes = require('./routes/groups');
+const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
@@ -23,6 +29,14 @@ mongoose
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
+
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/comments', commentRoutes);
+app.use('/api/groups', groupRoutes);
+
+app.use(errorHandler);
 
 // Start server
 const PORT = process.env.PORT || 5000;
