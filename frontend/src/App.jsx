@@ -1,8 +1,15 @@
+<<<<<<< HEAD
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/NavBar";
 import Dashboard from "./pages/Dashboard";
 import { AuthProvider } from "./context/AuthContext";
 
+=======
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navbar from './components/NavBar';
+import Dashboard from './pages/Dashboard';
+import { AuthProvider } from './context/AuthContext';
+>>>>>>> main
 function App() {
   return (
     <AuthProvider>
