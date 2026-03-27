@@ -157,8 +157,14 @@ const CreateGroup = () => {
 				navigate('/groups');
 			}, 900);
 		} catch (error) {
-			const fallback = 'Unable to create group right now. Please try again.';
-			const message = error?.response?.data?.message || fallback;
+			const status = error?.response?.status;
+			const apiMessage =
+				error?.response?.data?.message ||
+				error?.response?.data?.error ||
+				error?.message;
+			const message = apiMessage
+				? `${apiMessage}${status ? ` (HTTP ${status})` : ''}`
+				: 'Unable to create group right now. Please try again.';
 			setFeedback({ type: 'error', message });
 		} finally {
 			setIsSubmitting(false);
