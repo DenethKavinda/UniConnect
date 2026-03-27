@@ -40,17 +40,13 @@ function App() {
       <Router>
         <Layout>
           <Routes>
-<<<<<<< HEAD
             {/* Default route goes to login */}
             <Route path="/" element={<Navigate to="/login" replace />} />
 
             {/* Public routes */}
-=======
-            <Route path="/" element={<Dashboard />} />
             <Route path="/groups" element={<Group />} />
             <Route path="/groups/:groupId" element={<Group />} />
             <Route path="/groups/create" element={<CreateGroup />} />
->>>>>>> fd82afdf7682838533e000ecf352d65c4ac2dae6
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -94,6 +90,7 @@ function App() {
             />
 
             {/* Catch all */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </Layout>
       </Router>

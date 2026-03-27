@@ -17,10 +17,7 @@
     "react-redux": "^8.1.0",
     "react-router-dom": "^6.8.0",
     "recharts": "^3.8.1",
-<<<<<<< HEAD
-=======
     "socket.io-client": "^4.8.3",
->>>>>>> fd82afdf7682838533e000ecf352d65c4ac2dae6
     "sweetalert2": "^11.26.24"
   },
   "devDependencies": {
