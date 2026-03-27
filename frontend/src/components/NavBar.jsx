@@ -13,7 +13,7 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
-    { path: "/", label: "Home" },
+    { path: "/dashboard", label: "Home" },
     { path: "/materials", label: "Materials" },
     { path: "/groups", label: "Groups" },
     { path: "/posts", label: "Posts" },
@@ -29,7 +29,7 @@ const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto h-full flex items-center justify-between px-6">
         {/* Brand Logo */}
-        <Link to="/" className="flex items-center gap-3 group">
+        <Link to="/dashboard" className="flex items-center gap-3 group">
           <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-amber-500 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
             U
           </div>

@@ -4,12 +4,15 @@ const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db");
 const seedAdmin = require("./utils/seedAdmin");
+const path = require("path");
 
+// Routes
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const postRoutes = require("./routes/posts");
 const commentRoutes = require("./routes/comments");
 const adminRoutes = require("./routes/adminRoutes");
+const materialRoutes = require("./routes/materials"); // <-- New
 
 const app = express();
 
@@ -17,13 +20,16 @@ const app = express();
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
 if (!process.env.JWT_SECRET) {
-  console.error('❌ Missing JWT_SECRET. Set JWT_SECRET in backend/.env');
+  console.error("❌ Missing JWT_SECRET. Set JWT_SECRET in backend/.env");
   process.exit(1);
 }
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve uploads folder statically
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Test route
 app.get("/", (req, res) => {
@@ -36,9 +42,11 @@ app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/materials", materialRoutes); // <-- New Materials API
 
 const PORT = process.env.PORT || 5000;
 
+// Listen with retry logic
 const listenWithRetry = (port, retriesLeft = 10) => {
   const server = app.listen(port, () => {
     console.log(`Server running on port ${port}`);
@@ -57,6 +65,7 @@ const listenWithRetry = (port, retriesLeft = 10) => {
   });
 };
 
+// Start server
 const startServer = async () => {
   try {
     await connectDB();
