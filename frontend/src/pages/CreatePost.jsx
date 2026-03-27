@@ -29,8 +29,8 @@ const CreatePost = () => {
         </div>
         <div className="relative z-10 max-w-2xl mx-auto px-4 md:px-6 py-12 text-center">
           <p className="text-slate-300 mb-4">Please log in to create a post.</p>
-          <Link to="/" className="text-blue-400 hover:text-blue-300">
-            Go Home
+          <Link to="/posts" className="text-blue-400 hover:text-blue-300">
+            Back to Forum
           </Link>
         </div>
       </>
@@ -44,7 +44,7 @@ const CreatePost = () => {
   const handleTagInputBlur = () => {
     if (tagsInput.trim()) {
       const newTags = tagsInput.split(',').map(t => t.trim()).filter(t => t);
-      setTags([...tags, ...newTags]);
+      setTags((prev) => [...prev, ...newTags]);
       setTagsInput('');
     }
   };
@@ -68,11 +68,16 @@ const CreatePost = () => {
 
     setSubmitting(true);
     try {
+      const parsedTags = [
+        ...tags,
+        ...tagsInput.split(',').map((t) => t.trim()).filter(Boolean),
+      ];
+
       const newPost = await postService.createPost({
         title: title.trim(),
         content: content.trim(),
         subject,
-        tags,
+        tags: parsedTags,
         image: image.trim()
       });
       navigate(`/posts/${newPost._id}`);

@@ -25,13 +25,6 @@ if (!process.env.JWT_SECRET) {
 app.use(cors());
 app.use(express.json());
 
-<<<<<<< HEAD
-// Route registration
-app.use("/api/posts", require("./routes/posts"));
-app.use("/api/comments", require("./routes/comments"));
-
-=======
->>>>>>> main
 // Test route
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");

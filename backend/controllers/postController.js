@@ -1,5 +1,9 @@
 const Post = require('../models/Post');
 const Comment = require('../models/Comment');
+const mongoose = require('mongoose');
+
+const getAuthUserId = (user) => user?.userId || user?.id || user?._id || null;
+const hasUserId = (ids, userId) => ids.some((id) => id.toString() === String(userId));
 
 // GET /api/posts - Get all posts with filtering, sorting, and pagination
 const getAllPosts = async (req, res, next) => {
@@ -33,7 +37,7 @@ const getAllPosts = async (req, res, next) => {
       .sort(sortObj)
       .skip(skip)
       .limit(limitNum)
-      .populate('author', 'name profilePicture')
+      .populate('author', 'name')
       .lean();
 
     // Get total count for pagination
@@ -55,8 +59,12 @@ const getAllPosts = async (req, res, next) => {
 const getPostById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid post id' });
+    }
+
     const post = await Post.findById(id)
-      .populate('author', 'name profilePicture')
+      .populate('author', 'name')
       .lean();
 
     if (!post) {
@@ -73,7 +81,11 @@ const getPostById = async (req, res, next) => {
 const createPost = async (req, res, next) => {
   try {
     const { title, content, subject, tags = [], image } = req.body;
-    const userId = req.user.userId;
+    const userId = getAuthUserId(req.user);
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
 
     // Validate required fields
     if (!title || !title.trim()) {
@@ -94,7 +106,7 @@ const createPost = async (req, res, next) => {
     });
 
     await newPost.save();
-    await newPost.populate('author', 'name profilePicture');
+    await newPost.populate('author', 'name');
 
     res.status(201).json(newPost);
   } catch (error) {
@@ -107,7 +119,15 @@ const updatePost = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { title, content, subject, tags, image } = req.body;
-    const userId = req.user.userId;
+    const userId = getAuthUserId(req.user);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid post id' });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
 
     // Find post
     const post = await Post.findById(id);
@@ -121,14 +141,14 @@ const updatePost = async (req, res, next) => {
     }
 
     // Update fields
-    if (title) post.title = title.trim();
-    if (content) post.content = content.trim();
+    if (typeof title === 'string' && title.trim()) post.title = title.trim();
+    if (typeof content === 'string' && content.trim()) post.content = content.trim();
     if (subject !== undefined) post.subject = subject;
     if (tags) post.tags = Array.isArray(tags) ? tags.filter(t => t && t.trim()) : [];
     if (image !== undefined) post.image = image;
 
     await post.save();
-    await post.populate('author', 'name profilePicture');
+    await post.populate('author', 'name');
 
     res.json(post);
   } catch (error) {
@@ -140,7 +160,15 @@ const updatePost = async (req, res, next) => {
 const deletePost = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = req.user.userId;
+    const userId = getAuthUserId(req.user);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid post id' });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
 
     // Find post
     const post = await Post.findById(id);
@@ -170,7 +198,19 @@ const votePost = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { voteType } = req.body; // 'up', 'down', or 'none'
-    const userId = req.user.userId;
+    const userId = getAuthUserId(req.user);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid post id' });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!['up', 'down', 'none'].includes(voteType)) {
+      return res.status(400).json({ message: 'Invalid vote type' });
+    }
 
     // Find post
     const post = await Post.findById(id);
@@ -181,26 +221,26 @@ const votePost = async (req, res, next) => {
     // Handle vote toggle
     if (voteType === 'up') {
       // If already upvoted, remove the upvote
-      if (post.upvotes.includes(userId)) {
-        post.upvotes = post.upvotes.filter(id => id.toString() !== userId);
+      if (hasUserId(post.upvotes, userId)) {
+        post.upvotes = post.upvotes.filter(id => id.toString() !== String(userId));
       } else {
         // Add to upvotes and remove from downvotes
         post.upvotes.push(userId);
-        post.downvotes = post.downvotes.filter(id => id.toString() !== userId);
+        post.downvotes = post.downvotes.filter(id => id.toString() !== String(userId));
       }
     } else if (voteType === 'down') {
       // If already downvoted, remove the downvote
-      if (post.downvotes.includes(userId)) {
-        post.downvotes = post.downvotes.filter(id => id.toString() !== userId);
+      if (hasUserId(post.downvotes, userId)) {
+        post.downvotes = post.downvotes.filter(id => id.toString() !== String(userId));
       } else {
         // Add to downvotes and remove from upvotes
         post.downvotes.push(userId);
-        post.upvotes = post.upvotes.filter(id => id.toString() !== userId);
+        post.upvotes = post.upvotes.filter(id => id.toString() !== String(userId));
       }
     } else if (voteType === 'none') {
       // Remove from both
-      post.upvotes = post.upvotes.filter(id => id.toString() !== userId);
-      post.downvotes = post.downvotes.filter(id => id.toString() !== userId);
+      post.upvotes = post.upvotes.filter(id => id.toString() !== String(userId));
+      post.downvotes = post.downvotes.filter(id => id.toString() !== String(userId));
     }
 
     // Recalculate vote score
@@ -210,16 +250,16 @@ const votePost = async (req, res, next) => {
 
     // Determine current user's vote
     let userVote = 'none';
-    if (post.upvotes.includes(userId)) {
+    if (hasUserId(post.upvotes, userId)) {
       userVote = 'up';
-    } else if (post.downvotes.includes(userId)) {
+    } else if (hasUserId(post.downvotes, userId)) {
       userVote = 'down';
     }
 
     res.json({
       voteScore: post.voteScore,
-      upvotes: post.upvotes.length,
-      downvotes: post.downvotes.length,
+      upvotes: post.upvotes,
+      downvotes: post.downvotes,
       userVote
     });
   } catch (error) {

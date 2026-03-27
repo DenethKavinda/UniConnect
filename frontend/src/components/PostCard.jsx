@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { FiMessageSquare, FiShare2 } from 'react-icons/fi';
 import VoteButtons from './VoteButtons';
 import SubjectBadge from './SubjectBadge';
@@ -10,42 +10,34 @@ const getAuthorName = (author) => {
   return author.name || author.username || author.email || 'Unknown Author';
 };
 
-const PostCard = ({ post, onVote, onClick }) => {
-  const [userVote, setUserVote] = useState(null);
-  const [localScore, setLocalScore] = useState(post.voteScore || post.upvotes?.length - post.downvotes?.length || 0);
-  const [upvoted, setUpvoted] = useState(false);
+const getVoteId = (vote) => (typeof vote === 'string' ? vote : vote?._id || vote?.id);
+
+const PostCard = ({ post, currentUserId, onVote, onClick }) => {
 
   const title = post.title || 'Untitled';
   const authorName = getAuthorName(post.author);
   const subject = post.subject || 'General';
   const pinned = post.isPinned || false;
 
+  const upvoteIds = (post.upvotes || []).map(getVoteId);
+  const downvoteIds = (post.downvotes || []).map(getVoteId);
+  const score = typeof post.voteScore === 'number' ? post.voteScore : upvoteIds.length - downvoteIds.length;
+  const userVote = currentUserId
+    ? upvoteIds.includes(currentUserId)
+      ? 'up'
+      : downvoteIds.includes(currentUserId)
+        ? 'down'
+        : 'none'
+    : 'none';
+
   const handleUpvote = (e) => {
     e.stopPropagation();
-    const newVote = userVote === 'up' ? 'none' : 'up';
-    setUserVote(newVote);
-    
-    if (newVote === 'up') {
-      setLocalScore(localScore + (userVote === 'down' ? 2 : 1));
-    } else if (newVote === 'none' && userVote === 'up') {
-      setLocalScore(localScore - 1);
-    }
-    
-    if (onVote) onVote(post._id, newVote);
+    if (onVote) onVote(post._id, 'up');
   };
 
   const handleDownvote = (e) => {
     e.stopPropagation();
-    const newVote = userVote === 'down' ? 'none' : 'down';
-    setUserVote(newVote);
-    
-    if (newVote === 'down') {
-      setLocalScore(localScore - (userVote === 'up' ? 2 : 1));
-    } else if (newVote === 'none' && userVote === 'down') {
-      setLocalScore(localScore + 1);
-    }
-    
-    if (onVote) onVote(post._id, newVote);
+    if (onVote) onVote(post._id, 'down');
   };
 
   return (
@@ -56,7 +48,7 @@ const PostCard = ({ post, onVote, onClick }) => {
       {/* Vote Column */}
       <div className="flex flex-col items-center gap-1 min-w-[40px]">
         <VoteButtons
-          score={localScore}
+          score={score}
           userVote={userVote}
           onUpvote={handleUpvote}
           onDownvote={handleDownvote}

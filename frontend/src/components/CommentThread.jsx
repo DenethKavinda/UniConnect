@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { FiChevronDown, FiChevronUp, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiChevronUp, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import VoteButtons from './VoteButtons';
 import postService from '../services/postService';
 import { timeAgo } from '../utils/timeAgo';
 
-const CommentThread = ({ comment, postId, currentUserId, onReplyAdded, onCommentUpdated, onCommentDeleted }) => {
+const CommentThread = ({ comment, postId, currentUserId, onReplyAdded, onCommentUpdated, onCommentDeleted, depth = 0 }) => {
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.text);
@@ -16,9 +16,43 @@ const CommentThread = ({ comment, postId, currentUserId, onReplyAdded, onComment
   const [localScore, setLocalScore] = useState(comment.voteScore || comment.upvotes?.length - comment.downvotes?.length || 0);
   const [replies, setReplies] = useState(comment.replies || []);
 
-  const isOwner = currentUserId && comment.author?._id === currentUserId;
-  const authorName = comment.author?.name || 'Unknown';
-  const depth = comment.depth || 0;
+  const getVoteId = (vote) => (typeof vote === 'string' ? vote : vote?._id || vote?.id);
+
+  useEffect(() => {
+    setReplies(comment.replies || []);
+  }, [comment.replies]);
+
+  useEffect(() => {
+    const upvoteIds = (comment.upvotes || []).map(getVoteId);
+    const downvoteIds = (comment.downvotes || []).map(getVoteId);
+
+    setLocalScore(
+      typeof comment.voteScore === 'number'
+        ? comment.voteScore
+        : upvoteIds.length - downvoteIds.length
+    );
+
+    if (!currentUserId) {
+      setLocalVote('none');
+      return;
+    }
+
+    if (upvoteIds.includes(currentUserId)) {
+      setLocalVote('up');
+      return;
+    }
+
+    if (downvoteIds.includes(currentUserId)) {
+      setLocalVote('down');
+      return;
+    }
+
+    setLocalVote('none');
+  }, [comment.upvotes, comment.downvotes, comment.voteScore, currentUserId]);
+
+  const authorId = comment.author?._id || comment.author?.id;
+  const isOwner = currentUserId && authorId === currentUserId;
+  const authorName = comment.isDeleted ? '[deleted]' : (comment.author?.name || 'Unknown');
 
   // Depth-based indentation
   const getIndentClass = () => {
@@ -30,6 +64,7 @@ const CommentThread = ({ comment, postId, currentUserId, onReplyAdded, onComment
 
   const handleUpvote = async (e) => {
     e.stopPropagation();
+    if (!currentUserId || comment.isDeleted) return;
     const newVote = localVote === 'up' ? 'none' : 'up';
     const scoreDelta = newVote === 'up' ? (localVote === 'down' ? 2 : 1) : (localVote === 'up' ? -1 : 0);
     
@@ -46,6 +81,7 @@ const CommentThread = ({ comment, postId, currentUserId, onReplyAdded, onComment
 
   const handleDownvote = async (e) => {
     e.stopPropagation();
+    if (!currentUserId || comment.isDeleted) return;
     const newVote = localVote === 'down' ? 'none' : 'down';
     const scoreDelta = newVote === 'down' ? (localVote === 'up' ? -2 : -1) : (localVote === 'down' ? 1 : 0);
     
@@ -63,6 +99,7 @@ const CommentThread = ({ comment, postId, currentUserId, onReplyAdded, onComment
   const handleSubmitReply = async (e) => {
     e.preventDefault();
     if (!replyText.trim()) return;
+    if (!currentUserId) return;
 
     setIsSubmittingReply(true);
     try {
@@ -285,6 +322,7 @@ const CommentThread = ({ comment, postId, currentUserId, onReplyAdded, onComment
               onReplyAdded={onReplyAdded}
               onCommentUpdated={onCommentUpdated}
               onCommentDeleted={onCommentDeleted}
+              depth={depth + 1}
             />
           ))}
         </div>

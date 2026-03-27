@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiEdit2, FiTrash2, FiFilter } from 'react-icons/fi';
 import PostCard from '../components/PostCard';
-import SubjectBadge from '../components/SubjectBadge';
 import postService from '../services/postService';
 import { useAuth } from '../context/AuthContext';
 
@@ -10,6 +8,7 @@ const SUBJECTS = ['All', 'General', 'IT1010', 'IT2020', 'IT3020', 'SE3040', 'SE3
 
 const Discussions = () => {
   const { user } = useAuth();
+  const currentUserId = user?._id || user?.id || null;
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -66,19 +65,83 @@ const Discussions = () => {
   };
 
   const handleVote = async (postId, voteType) => {
+    if (!currentUserId) {
+      setError('Please log in to vote.');
+      return;
+    }
+
+    const getVoteState = (post) => {
+      const upvoteIds = (post.upvotes || []).map((vote) =>
+        typeof vote === 'string' ? vote : vote?._id || vote?.id
+      );
+      const downvoteIds = (post.downvotes || []).map((vote) =>
+        typeof vote === 'string' ? vote : vote?._id || vote?.id
+      );
+      if (upvoteIds.includes(currentUserId)) return 'up';
+      if (downvoteIds.includes(currentUserId)) return 'down';
+      return 'none';
+    };
+
+    const previousPosts = posts;
+
+    const nextPosts = posts.map((post) => {
+      if (post._id !== postId) return post;
+
+      const previousVote = getVoteState(post);
+      let nextUpvotes = [...(post.upvotes || [])];
+      let nextDownvotes = [...(post.downvotes || [])];
+
+      const removeUserId = (votes) =>
+        votes.filter((vote) => {
+          const id = typeof vote === 'string' ? vote : vote?._id || vote?.id;
+          return id !== currentUserId;
+        });
+
+      if (voteType === 'up') {
+        if (previousVote === 'up') {
+          nextUpvotes = removeUserId(nextUpvotes);
+        } else {
+          nextUpvotes = [...removeUserId(nextUpvotes), currentUserId];
+          nextDownvotes = removeUserId(nextDownvotes);
+        }
+      } else if (voteType === 'down') {
+        if (previousVote === 'down') {
+          nextDownvotes = removeUserId(nextDownvotes);
+        } else {
+          nextDownvotes = [...removeUserId(nextDownvotes), currentUserId];
+          nextUpvotes = removeUserId(nextUpvotes);
+        }
+      } else {
+        nextUpvotes = removeUserId(nextUpvotes);
+        nextDownvotes = removeUserId(nextDownvotes);
+      }
+
+      return {
+        ...post,
+        upvotes: nextUpvotes,
+        downvotes: nextDownvotes,
+        voteScore: nextUpvotes.length - nextDownvotes.length,
+      };
+    });
+
+    setPosts(nextPosts);
+
     try {
-      await postService.votePost(postId, voteType);
-      setPosts(prev => prev.map(p => 
-        p._id === postId 
-          ? {
-              ...p,
-              voteScore: voteType === 'up' ? p.voteScore + 1 : voteType === 'down' ? p.voteScore - 1 : p.voteScore,
-              upvotes: voteType === 'up' ? [...p.upvotes, user?._id] : p.upvotes,
-              downvotes: voteType === 'down' ? [...p.downvotes, user?._id] : p.downvotes
-            }
-          : p
-      ));
+      const data = await postService.votePost(postId, voteType);
+      setPosts((prev) =>
+        prev.map((post) =>
+          post._id === postId
+            ? {
+                ...post,
+                voteScore: data.voteScore,
+                upvotes: data.upvotes || [],
+                downvotes: data.downvotes || [],
+              }
+            : post
+        )
+      );
     } catch (err) {
+      setPosts(previousPosts);
       console.error('Vote failed:', err);
     }
   };
@@ -104,7 +167,7 @@ const Discussions = () => {
           </div>
           <div className="flex items-center justify-between">
             <p className="text-sm text-slate-400">{posts.length} posts · {SUBJECTS.length - 1} subjects</p>
-            <Link to="/posts/new" className="bg-[#EAB308] text-[#0a0d17] font-semibold px-4 py-2 rounded-lg hover:brightness-110 transition-all">
+            <Link to="/posts/create" className="bg-[#EAB308] text-[#0a0d17] font-semibold px-4 py-2 rounded-lg hover:brightness-110 transition-all">
               + Create Post
             </Link>
           </div>
@@ -201,6 +264,7 @@ const Discussions = () => {
                 <PostCard
                   key={post._id}
                   post={post}
+                  currentUserId={currentUserId}
                   onVote={handleVote}
                   onClick={handlePostClick}
                 />
@@ -240,7 +304,7 @@ const Discussions = () => {
                 A Reddit-style platform for students to share knowledge, ask questions, and support each other across all courses.
               </p>
               <Link
-                to="/posts/new"
+                to="/posts/create"
                 className="mt-3 block w-full text-center bg-[#EAB308] text-[#0a0d17] font-semibold text-sm py-2 rounded-lg hover:brightness-110 transition-all"
               >
                 + New Post

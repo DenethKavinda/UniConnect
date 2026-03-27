@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { FiChevronLeft, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiChevronLeft, FiTrash2 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import CommentThread from '../components/CommentThread';
 import VoteButtons from '../components/VoteButtons';
@@ -12,6 +12,7 @@ const DiscussionDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const currentUserId = user?._id || user?.id || null;
 
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
@@ -20,20 +21,31 @@ const DiscussionDetail = () => {
   const [commentText, setCommentText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [sortComments, setSortComments] = useState('best');
-  const [userVote, setUserVote] = useState(null);
-  const [userVotedCommentIds, setUserVotedCommentIds] = useState(new Set());
+  const [userVote, setUserVote] = useState('none');
 
-  const loadDiscussionDetail = async () => {
+  const getVoteId = (vote) => (typeof vote === 'string' ? vote : vote?._id || vote?.id);
+
+  const detectUserVote = (postData) => {
+    if (!currentUserId || !postData) return 'none';
+    const upvoteIds = (postData.upvotes || []).map(getVoteId);
+    const downvoteIds = (postData.downvotes || []).map(getVoteId);
+    if (upvoteIds.includes(currentUserId)) return 'up';
+    if (downvoteIds.includes(currentUserId)) return 'down';
+    return 'none';
+  };
+
+  const loadDiscussionDetail = async (commentSort = sortComments) => {
     try {
       setLoading(true);
       setError('');
       const [postData, commentsData] = await Promise.all([
         postService.getPostById(id),
-        postService.getComments(id, sortComments)
+        postService.getComments(id, commentSort)
       ]);
 
       setPost(postData);
       setComments(commentsData);
+      setUserVote(detectUserVote(postData));
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load discussion details.');
     } finally {
@@ -43,28 +55,65 @@ const DiscussionDetail = () => {
 
   useEffect(() => {
     if (id) {
-      loadDiscussionDetail();
+      loadDiscussionDetail(sortComments);
     }
-  }, [id]);
+  }, [id, sortComments, currentUserId]);
 
-  useEffect(() => {
-    if (id) {
-      postService.getComments(id, sortComments).then(setComments).catch(err => {
-        console.error('Failed to sort comments:', err);
-      });
-    }
-  }, [sortComments, id]);
-
-  const isOwner = user && post && user._id === post.author?._id;
+  const isOwner = Boolean(currentUserId && post?.author?._id && currentUserId === post.author._id);
 
   const handleVotePost = async (voteType) => {
+    if (!currentUserId) {
+      setError('Please log in to vote.');
+      return;
+    }
+
+    if (!post) return;
+
+    const previousPost = post;
+    const previousVote = userVote;
     const newVote = userVote === voteType ? 'none' : voteType;
+
+    const removeUserId = (votes) =>
+      votes.filter((vote) => getVoteId(vote) !== currentUserId);
+
+    let nextUpvotes = [...(post.upvotes || [])];
+    let nextDownvotes = [...(post.downvotes || [])];
+
+    if (newVote === 'up') {
+      nextUpvotes = [...removeUserId(nextUpvotes), currentUserId];
+      nextDownvotes = removeUserId(nextDownvotes);
+    } else if (newVote === 'down') {
+      nextDownvotes = [...removeUserId(nextDownvotes), currentUserId];
+      nextUpvotes = removeUserId(nextUpvotes);
+    } else {
+      nextUpvotes = removeUserId(nextUpvotes);
+      nextDownvotes = removeUserId(nextDownvotes);
+    }
+
     setUserVote(newVote);
+    setPost({
+      ...post,
+      upvotes: nextUpvotes,
+      downvotes: nextDownvotes,
+      voteScore: nextUpvotes.length - nextDownvotes.length,
+    });
 
     try {
-      await postService.votePost(id, newVote);
+      const data = await postService.votePost(id, newVote);
+      setPost((prev) =>
+        prev
+          ? {
+              ...prev,
+              voteScore: data.voteScore,
+              upvotes: data.upvotes || [],
+              downvotes: data.downvotes || [],
+            }
+          : prev
+      );
+      setUserVote(data.userVote || 'none');
     } catch (err) {
-      setUserVote(userVote);
+      setPost(previousPost);
+      setUserVote(previousVote);
       console.error('Vote failed:', err);
     }
   };
@@ -105,8 +154,7 @@ const DiscussionDetail = () => {
   };
 
   const handleReplyAdded = (newComment) => {
-    // Refresh comments tree
-    postService.getComments(id, sortComments).then(setComments);
+    postService.getComments(id, sortComments).then(setComments).catch(() => {});
     setPost(prev => ({ ...prev, commentCount: (prev?.commentCount || 0) + 1 }));
   };
 
@@ -122,22 +170,33 @@ const DiscussionDetail = () => {
   };
 
   const handleCommentDeleted = (commentId) => {
-    const deleteFromTree = (commentsList) => {
-      return commentsList
-        .map(c => ({
-          ...c,
-          replies: deleteFromTree(c.replies || [])
-        }))
-        .filter(c => c._id !== commentId);
-    };
-    setComments(deleteFromTree(comments));
-    setPost(prev => ({ ...prev, commentCount: Math.max(0, (prev?.commentCount || 0) - 1) }));
+    const markDeletedInTree = (commentsList) =>
+      commentsList.map((comment) => {
+        if (comment._id === commentId) {
+          return {
+            ...comment,
+            isDeleted: true,
+            text: '[deleted]',
+            author: null,
+            replies: markDeletedInTree(comment.replies || []),
+          };
+        }
+
+        return {
+          ...comment,
+          replies: markDeletedInTree(comment.replies || []),
+        };
+      });
+
+    setComments((prev) => markDeletedInTree(prev));
   };
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8">
-        <div className="text-slate-300">Loading...</div>
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 space-y-4">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] h-48 animate-pulse" />
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] h-24 animate-pulse" />
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] h-20 animate-pulse" />
       </div>
     );
   }
@@ -159,13 +218,14 @@ const DiscussionDetail = () => {
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 md:px-6 py-6 pb-20 space-y-6">
       {/* Back Button */}
-      <Link
-        to="/posts"
+      <button
+        type="button"
+        onClick={() => navigate('/posts')}
         className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-200 text-sm transition-colors"
       >
         <FiChevronLeft size={16} />
         Back to Forum
-      </Link>
+      </button>
 
       {/* Error Message */}
       {error && (
@@ -241,13 +301,6 @@ const DiscussionDetail = () => {
               </span>
               {isOwner && (
                 <>
-                  <button
-                    onClick={() => navigate(`/posts/${id}/edit`)}
-                    className="text-sm text-slate-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
-                  >
-                    <FiEdit2 size={14} />
-                    Edit
-                  </button>
                   <button
                     onClick={handleDeletePost}
                     className="text-sm text-slate-400 hover:text-red-300 flex items-center gap-1 transition-colors"
@@ -328,7 +381,7 @@ const DiscussionDetail = () => {
               key={comment._id}
               comment={comment}
               postId={id}
-              currentUserId={user?._id}
+              currentUserId={currentUserId}
               onReplyAdded={handleReplyAdded}
               onCommentUpdated={handleCommentUpdated}
               onCommentDeleted={handleCommentDeleted}

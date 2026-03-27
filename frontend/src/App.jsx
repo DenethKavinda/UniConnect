@@ -5,6 +5,9 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLoginPage from "./pages/AdminLoginPage";
+import Posts from "./pages/Posts";
+import PostDetail from "./pages/PostDetail";
+import CreatePost from "./pages/CreatePost";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 function App() {
@@ -34,6 +37,9 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/posts" element={<Posts />} />
+            <Route path="/posts/create" element={<CreatePost />} />
+            <Route path="/posts/:id" element={<PostDetail />} />
             <Route path="*" element={<Dashboard />} />
           </Routes>
         </main>

@@ -1,11 +1,19 @@
 const Comment = require('../models/Comment');
 const Post = require('../models/Post');
+const mongoose = require('mongoose');
+
+const getAuthUserId = (user) => user?.userId || user?.id || user?._id || null;
+const hasUserId = (ids, userId) => ids.some((id) => id.toString() === String(userId));
 
 // GET /api/comments/post/:postId - Get all comments for a post with tree structure
 const getCommentsByPost = async (req, res, next) => {
   try {
     const { postId } = req.params;
     const { sort = 'best' } = req.query;
+
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ message: 'Invalid post id' });
+    }
 
     // Build sort object
     let sortObj = { voteScore: -1, createdAt: -1 }; // best
@@ -18,7 +26,7 @@ const getCommentsByPost = async (req, res, next) => {
     // Fetch all comments for this post
     const comments = await Comment.find({ post: postId })
       .sort(sortObj)
-      .populate('author', 'name profilePicture')
+      .populate('author', 'name')
       .lean();
 
     // Build tree structure
@@ -27,18 +35,26 @@ const getCommentsByPost = async (req, res, next) => {
 
     // First pass: create comment objects and identify root comments
     comments.forEach(comment => {
-      commentMap[comment._id] = { ...comment, replies: [] };
+      const id = String(comment._id);
+      const normalizedComment = {
+        ...comment,
+        text: comment.isDeleted ? '[deleted]' : comment.text,
+        author: comment.isDeleted ? null : comment.author,
+        replies: []
+      };
+
+      commentMap[id] = normalizedComment;
       if (!comment.parentComment) {
-        rootComments.push(commentMap[comment._id]);
+        rootComments.push(normalizedComment);
       }
     });
 
     // Second pass: attach replies to their parents
     comments.forEach(comment => {
       if (comment.parentComment) {
-        const parent = commentMap[comment.parentComment];
+        const parent = commentMap[String(comment.parentComment)];
         if (parent) {
-          parent.replies.push(commentMap[comment._id]);
+          parent.replies.push(commentMap[String(comment._id)]);
         }
       }
     });
@@ -53,7 +69,15 @@ const getCommentsByPost = async (req, res, next) => {
 const createComment = async (req, res, next) => {
   try {
     const { text, postId, parentCommentId } = req.body;
-    const userId = req.user.userId;
+    const userId = getAuthUserId(req.user);
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ message: 'Invalid post id' });
+    }
 
     // Validate text
     if (!text || !text.trim()) {
@@ -69,9 +93,16 @@ const createComment = async (req, res, next) => {
     // Calculate depth
     let depth = 0;
     if (parentCommentId) {
+      if (!mongoose.Types.ObjectId.isValid(parentCommentId)) {
+        return res.status(400).json({ message: 'Invalid parent comment id' });
+      }
+
       const parentComment = await Comment.findById(parentCommentId);
       if (!parentComment) {
         return res.status(404).json({ message: 'Parent comment not found' });
+      }
+      if (String(parentComment.post) !== String(postId)) {
+        return res.status(400).json({ message: 'Parent comment does not belong to this post' });
       }
       depth = Math.min(parentComment.depth + 1, 3);
     }
@@ -86,7 +117,7 @@ const createComment = async (req, res, next) => {
     });
 
     await newComment.save();
-    await newComment.populate('author', 'name profilePicture');
+    await newComment.populate('author', 'name');
 
     // Increment post comment count
     await Post.findByIdAndUpdate(postId, { $inc: { commentCount: 1 } });
@@ -102,7 +133,15 @@ const updateComment = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { text } = req.body;
-    const userId = req.user.userId;
+    const userId = getAuthUserId(req.user);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid comment id' });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
 
     // Find comment
     const comment = await Comment.findById(id);
@@ -116,12 +155,12 @@ const updateComment = async (req, res, next) => {
     }
 
     // Update text
-    if (text) {
+    if (typeof text === 'string' && text.trim()) {
       comment.text = text.trim();
     }
 
     await comment.save();
-    await comment.populate('author', 'name profilePicture');
+    await comment.populate('author', 'name');
 
     res.json(comment);
   } catch (error) {
@@ -133,7 +172,15 @@ const updateComment = async (req, res, next) => {
 const deleteComment = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = req.user.userId;
+    const userId = getAuthUserId(req.user);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid comment id' });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
 
     // Find comment
     const comment = await Comment.findById(id);
@@ -162,7 +209,19 @@ const voteComment = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { voteType } = req.body; // 'up', 'down', or 'none'
-    const userId = req.user.userId;
+    const userId = getAuthUserId(req.user);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid comment id' });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!['up', 'down', 'none'].includes(voteType)) {
+      return res.status(400).json({ message: 'Invalid vote type' });
+    }
 
     // Find comment
     const comment = await Comment.findById(id);
@@ -172,22 +231,22 @@ const voteComment = async (req, res, next) => {
 
     // Handle vote toggle
     if (voteType === 'up') {
-      if (comment.upvotes.includes(userId)) {
-        comment.upvotes = comment.upvotes.filter(id => id.toString() !== userId);
+      if (hasUserId(comment.upvotes, userId)) {
+        comment.upvotes = comment.upvotes.filter(id => id.toString() !== String(userId));
       } else {
         comment.upvotes.push(userId);
-        comment.downvotes = comment.downvotes.filter(id => id.toString() !== userId);
+        comment.downvotes = comment.downvotes.filter(id => id.toString() !== String(userId));
       }
     } else if (voteType === 'down') {
-      if (comment.downvotes.includes(userId)) {
-        comment.downvotes = comment.downvotes.filter(id => id.toString() !== userId);
+      if (hasUserId(comment.downvotes, userId)) {
+        comment.downvotes = comment.downvotes.filter(id => id.toString() !== String(userId));
       } else {
         comment.downvotes.push(userId);
-        comment.upvotes = comment.upvotes.filter(id => id.toString() !== userId);
+        comment.upvotes = comment.upvotes.filter(id => id.toString() !== String(userId));
       }
     } else if (voteType === 'none') {
-      comment.upvotes = comment.upvotes.filter(id => id.toString() !== userId);
-      comment.downvotes = comment.downvotes.filter(id => id.toString() !== userId);
+      comment.upvotes = comment.upvotes.filter(id => id.toString() !== String(userId));
+      comment.downvotes = comment.downvotes.filter(id => id.toString() !== String(userId));
     }
 
     // Recalculate vote score
@@ -197,16 +256,16 @@ const voteComment = async (req, res, next) => {
 
     // Determine current user's vote
     let userVote = 'none';
-    if (comment.upvotes.includes(userId)) {
+    if (hasUserId(comment.upvotes, userId)) {
       userVote = 'up';
-    } else if (comment.downvotes.includes(userId)) {
+    } else if (hasUserId(comment.downvotes, userId)) {
       userVote = 'down';
     }
 
     res.json({
       voteScore: comment.voteScore,
-      upvotes: comment.upvotes.length,
-      downvotes: comment.downvotes.length,
+      upvotes: comment.upvotes,
+      downvotes: comment.downvotes,
       userVote
     });
   } catch (error) {

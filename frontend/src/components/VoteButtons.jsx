@@ -17,7 +17,10 @@ const VoteButtons = ({ score, userVote, onUpvote, onDownvote, vertical = true, s
   return (
     <div className={containerClass}>
       <button
-        onClick={onUpvote}
+        onClick={(e) => {
+          e.stopPropagation();
+          onUpvote?.(e);
+        }}
         className={`${buttonClasses} rounded-lg transition-all ${
           userVote === 'up'
             ? 'text-amber-400 bg-amber-400/20'
@@ -33,7 +36,10 @@ const VoteButtons = ({ score, userVote, onUpvote, onDownvote, vertical = true, s
       </span>
       
       <button
-        onClick={onDownvote}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDownvote?.(e);
+        }}
         className={`${buttonClasses} rounded-lg transition-all ${
           userVote === 'down'
             ? 'text-blue-400 bg-blue-400/20'
