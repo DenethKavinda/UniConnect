@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 const menu = [
@@ -108,7 +108,7 @@ function NavItem({ item, isOpen, onToggle }) {
     padding: "9px 10px",
     borderRadius: "9px",
     fontSize: "13.5px",
-    fontWeight: 500,
+    fontWeight: 600,
     textDecoration: "none",
     border: "none",
     cursor: "pointer",
@@ -118,20 +118,21 @@ function NavItem({ item, isOpen, onToggle }) {
     lineHeight: 1,
     position: "relative",
     outline: "none",
-    background: isActive || isChildActive ? "rgba(45,212,191,0.1)" : "transparent",
-    color: isActive || isChildActive ? "#2dd4bf" : "#64748b",
+    // Changed to Amber/Gold background for active state
+    background: isActive || isChildActive ? "rgba(234, 179, 8, 0.1)" : "transparent",
+    color: isActive || isChildActive ? "#eab308" : "#94a3b8",
   };
 
   const hoverIn = (e) => {
     if (!isActive && !isChildActive) {
-      e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-      e.currentTarget.style.color = "#94a3b8";
+      e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+      e.currentTarget.style.color = "#f1f5f9";
     }
   };
   const hoverOut = (e) => {
     if (!isActive && !isChildActive) {
       e.currentTarget.style.background = "transparent";
-      e.currentTarget.style.color = "#64748b";
+      e.currentTarget.style.color = "#94a3b8";
     }
   };
 
@@ -145,7 +146,7 @@ function NavItem({ item, isOpen, onToggle }) {
         width: 3,
         height: 16,
         borderRadius: 2,
-        background: "#2dd4bf",
+        background: "#eab308", // Amber Pill
       }}
     />
   );
@@ -196,21 +197,21 @@ function NavItem({ item, isOpen, onToggle }) {
                     fontSize: "13px",
                     fontWeight: childActive ? 600 : 400,
                     textDecoration: "none",
-                    color: childActive ? "#2dd4bf" : "#475569",
-                    background: childActive ? "rgba(45,212,191,0.08)" : "transparent",
+                    color: childActive ? "#3b82f6" : "#64748b", // Blue for child active
+                    background: childActive ? "rgba(59, 130, 246, 0.08)" : "transparent",
                     transition: "background 0.12s, color 0.12s",
                     letterSpacing: "-0.01em",
                   }}
                   onMouseEnter={(e) => {
                     if (!childActive) {
                       e.currentTarget.style.background = "rgba(255,255,255,0.03)";
-                      e.currentTarget.style.color = "#64748b";
+                      e.currentTarget.style.color = "#cbd5e1";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!childActive) {
                       e.currentTarget.style.background = "transparent";
-                      e.currentTarget.style.color = "#475569";
+                      e.currentTarget.style.color = "#64748b";
                     }
                   }}
                 >
@@ -252,52 +253,53 @@ function Sidebar() {
   return (
     <div
       style={{
-        width: 228,
+        width: 240,
         minHeight: "100vh",
-        background: "#060d1f",
+        background: "#060d1f", // Midnight Navy
         borderRight: "1px solid rgba(255,255,255,0.05)",
         display: "flex",
         flexDirection: "column",
-        padding: "20px 10px 16px",
+        padding: "24px 12px 16px",
         flexShrink: 0,
         fontFamily: "'Inter', sans-serif",
       }}
     >
       {/* ── Logo ── */}
-      <div style={{ padding: "4px 8px 20px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+      <div style={{ padding: "4px 8px 28px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div
             style={{
-              width: 32,
-              height: 32,
-              borderRadius: "9px",
-              background: "linear-gradient(135deg, #0d9488, #2dd4bf)",
+              width: 34,
+              height: 34,
+              borderRadius: "10px",
+              // Blue to Amber Logo Gradient
+              background: "linear-gradient(135deg, #3b82f6, #eab308)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
-              boxShadow: "0 0 0 1px rgba(45,212,191,0.3), 0 4px 12px rgba(45,212,191,0.18)",
+              boxShadow: "0 4px 12px rgba(59, 130, 246, 0.2)",
             }}
           >
-            <svg width="17" height="17" viewBox="0 0 17 17" fill="none">
+            <svg width="18" height="18" viewBox="0 0 17 17" fill="none">
               <path d="M8.5 2L14 6.5v5L8.5 15 3 11.5v-5L8.5 2z" fill="white" opacity="0.95"/>
-              <circle cx="8.5" cy="8.5" r="2.2" fill="#0d9488"/>
+              <circle cx="8.5" cy="8.5" r="2.2" fill="#0f172a"/>
             </svg>
           </div>
           <div>
             <div
               style={{
-                fontSize: "15px",
-                fontWeight: 700,
+                fontSize: "16px",
+                fontWeight: 800,
                 color: "#f1f5f9",
                 letterSpacing: "-0.03em",
-                lineHeight: 1.2,
+                lineHeight: 1,
               }}
             >
-              Uni<span style={{ color: "#2dd4bf" }}>Connect</span>
+              Uni<span style={{ color: "#eab308" }}>Connect</span>
             </div>
-            <div style={{ fontSize: "10.5px", color: "#334155", letterSpacing: "0.04em" }}>
-              Admin Panel
+            <div style={{ fontSize: "10px", color: "#475569", letterSpacing: "0.1em", marginTop: "3px", textTransform: "uppercase", fontWeight: 700 }}>
+              Admin Portal
             </div>
           </div>
         </div>
@@ -307,19 +309,19 @@ function Sidebar() {
       <div
         style={{
           fontSize: "10px",
-          color: "#1e293b",
+          color: "#334155",
           textTransform: "uppercase",
-          letterSpacing: "0.12em",
-          fontWeight: 600,
+          letterSpacing: "0.15em",
+          fontWeight: 800,
           padding: "0 10px",
-          marginBottom: "6px",
+          marginBottom: "8px",
         }}
       >
-        Menu
+        Core Management
       </div>
 
       {/* ── Nav ── */}
-      <nav style={{ display: "flex", flexDirection: "column", gap: "2px", flex: 1 }}>
+      <nav style={{ display: "flex", flexDirection: "column", gap: "3px", flex: 1 }}>
         {menu.map((item) => (
           <NavItem
             key={item.path}
@@ -331,53 +333,53 @@ function Sidebar() {
       </nav>
 
       {/* ── Divider ── */}
-      <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", margin: "12px 4px" }} />
+      <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", margin: "16px 4px" }} />
 
       {/* ── Admin card ── */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "9px",
-          padding: "8px 10px",
-          borderRadius: "10px",
-          background: "rgba(255,255,255,0.03)",
+          gap: "10px",
+          padding: "10px",
+          borderRadius: "12px",
+          background: "rgba(255,255,255,0.02)",
           border: "1px solid rgba(255,255,255,0.05)",
         }}
       >
         <div
           style={{
-            width: 30,
-            height: 30,
+            width: 32,
+            height: 32,
             borderRadius: "50%",
-            background: "linear-gradient(135deg, rgba(45,212,191,0.2), rgba(129,140,248,0.2))",
-            border: "1px solid rgba(45,212,191,0.25)",
+            background: "linear-gradient(135deg, rgba(59,130,246,0.2), rgba(234,179,8,0.2))",
+            border: "1px solid rgba(234,179,8,0.3)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: "11px",
-            color: "#2dd4bf",
-            fontWeight: 700,
+            fontSize: "12px",
+            color: "#eab308",
+            fontWeight: 800,
             flexShrink: 0,
           }}
         >
           A
         </div>
         <div style={{ overflow: "hidden", flex: 1 }}>
-          <div style={{ fontSize: "13px", fontWeight: 600, color: "#cbd5e1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.3 }}>
-            Admin
+          <div style={{ fontSize: "13px", fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            Admin User
           </div>
-          <div style={{ fontSize: "11px", color: "#334155", lineHeight: 1.2 }}>Administrator</div>
+          <div style={{ fontSize: "11px", color: "#64748b", fontWeight: 500 }}>Privileged Access</div>
         </div>
-        {/* Online dot */}
+        {/* Amber status dot */}
         <div
           style={{
             width: 7,
             height: 7,
             borderRadius: "50%",
-            background: "#34d399",
+            background: "#eab308",
             flexShrink: 0,
-            boxShadow: "0 0 0 2px rgba(52,211,153,0.2)",
+            boxShadow: "0 0 8px rgba(234,179,8,0.4)",
           }}
         />
       </div>

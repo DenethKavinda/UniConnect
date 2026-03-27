@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
-import Navbar from "../components/NavBar";
 import Sidebar from "../components/Sidebar";
 import {
   AreaChart,
@@ -125,30 +124,33 @@ function CustomTooltip({ active, payload, label }) {
 // main component
 function AdminDashboard() {
   const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const fetchUsers = async () => {
+    try {
+      setError("");
+      setIsLoading(true);
+      const res = await API.get("/admin/users");
+      const payload = res?.data;
+      const list = Array.isArray(payload) ? payload : payload?.users;
+      setUsers(Array.isArray(list) ? list : []);
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to load users";
+      setError(message);
+      setUsers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchUsers();
   }, []);
-
-  // const fetchUsers = async () => {
-  //   const res = await API.get("/admin/users");
-  //   setUsers(res.data);
-  // };
-  const fetchUsers = async () => {
-  try {
-    const res = await API.get("/admin/users");
-    console.log("API response:", res.data);
-
-    const usersData = Array.isArray(res.data)
-      ? res.data
-      : res.data.users || res.data.data || [];
-
-    setUsers(usersData);
-  } catch (err) {
-    console.error(err);
-    setUsers([]);
-  }
-};
 
   const totalUsers = users.length;
   const totalAdmins = users.filter((u) => u.role === "admin").length;
@@ -160,31 +162,20 @@ function AdminDashboard() {
     { name: "Blocked", value: blockedUsers },
     { name: "Admins", value: totalAdmins },
   ];
-  const PIE_COLORS = ["#34d399", "#f87171", "#818cf8"];
+  // Updated Colors: Blue, Amber, and Emerald
+  const PIE_COLORS = ["#3b82f6", "#f87171", "#eab308"];
 
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        background: "#050b19",
-        color: "#f1f5f9",
-        fontFamily: "'Inter', sans-serif",
-      }}
-    >
-      <Sidebar />
+    <div className="min-h-screen bg-[#0a0d17] text-slate-200 font-sans selection:bg-amber-500/30">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-amber-600/5 blur-[120px] rounded-full" />
+      </div>
 
-      <div
-        style={{
-          flex: 1,
-          background: "linear-gradient(135deg, #050b19 0%, #0b1224 55%, #101e39 100%)",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <Navbar />
+      <div className="relative z-10 flex min-h-screen">
+        <Sidebar />
 
-        <main style={{ padding: "1.75rem 2rem", flex: 1 }}>
+        <main className="flex-1 px-6 md:px-8 py-8">
           {/* ── page header ── */}
           <div style={{ marginBottom: "1.75rem" }}>
             <h2
@@ -201,6 +192,12 @@ function AdminDashboard() {
             <p style={{ fontSize: "0.83rem", color: "#64748b" }}>
               Overview of all platform activity and user metrics
             </p>
+
+            {error ? (
+              <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                {error}
+              </div>
+            ) : null}
           </div>
 
           {/* ── stat cards ── */}
@@ -212,11 +209,17 @@ function AdminDashboard() {
               marginBottom: "1.75rem",
             }}
           >
-            <StatCard label="Total Users" value={totalUsers} accent="#2dd4bf" icon="" />
-            <StatCard label="Admins" value={totalAdmins} accent="#818cf8" icon="" />
-            <StatCard label="Active Users" value={activeUsers} accent="#34d399" icon="" />
+            <StatCard label="Total Users" value={totalUsers} accent="#3b82f6" icon="" />
+            <StatCard label="Admins" value={totalAdmins} accent="#eab308" icon="" />
+            <StatCard label="Active Users" value={activeUsers} accent="#3b82f6" icon="" />
             <StatCard label="Blocked Users" value={blockedUsers} accent="#f87171" icon="" />
           </div>
+
+          {isLoading ? (
+            <div className="mb-7 rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3 text-sm text-slate-300">
+              Loading admin data…
+            </div>
+          ) : null}
 
           {/* ── charts row ── */}
           <div
@@ -244,15 +247,15 @@ function AdminDashboard() {
                 <AreaChart data={userGrowthData}>
                   <defs>
                     <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                   <XAxis dataKey="month" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="users" stroke="#2dd4bf" strokeWidth={2.5} fill="url(#growthGrad)" dot={false} />
+                  <Area type="monotone" dataKey="users" stroke="#3b82f6" strokeWidth={2.5} fill="url(#growthGrad)" dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -276,7 +279,7 @@ function AdminDashboard() {
                   <XAxis dataKey="day" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="logins" fill="#818cf8" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="logins" fill="#eab308" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -382,13 +385,13 @@ function AdminDashboard() {
                               width: 32,
                               height: 32,
                               borderRadius: "50%",
-                              background: "linear-gradient(135deg, #2dd4bf44, #818cf844)",
+                              background: "linear-gradient(135deg, #3b82f644, #eab30844)",
                               border: "1px solid #1e293b",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               fontSize: "0.78rem",
-                              color: "#2dd4bf",
+                              color: "#eab308",
                               fontWeight: 700,
                               flexShrink: 0,
                             }}
