@@ -1,24 +1,60 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+// const mongoose = require('mongoose');
+// const bcrypt = require('bcryptjs');
 
-// User schema
+// // User schema
 
-const userSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  password: String,
-  profilePicture: String,
-  bio: String,
-  createdAt: { type: Date, default: Date.now }
-});
+// const userSchema = new mongoose.Schema({
+//   name: String,
+//   email: String,
+//   password: String,
+//   profilePicture: String,
+//   bio: String,
+//   createdAt: { type: Date, default: Date.now }
+// });
 
-// Hash password before saving
+// // Hash password before saving
 
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  // Password hashing logic
-});
+// userSchema.pre('save', async function(next) {
+//   if (!this.isModified('password')) return next();
+//   // Password hashing logic
+// });
 
-const User = mongoose.model('User', userSchema);
+// const User = mongoose.model('User', userSchema);
 
-module.exports = User;
+// module.exports = User;
+
+const mongoose = require("mongoose");
+
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, "Name is required"],
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      unique: true,
+      trim: true,
+      lowercase: true,
+    },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+      minlength: 6,
+    },
+    role: {
+      type: String,
+      enum: ["student", "admin"],
+      default: "student",
+    },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    }
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("User", userSchema);
