@@ -7,6 +7,8 @@ import {
 } from "react-router-dom";
 import Navbar from "./components/NavBar";
 import Dashboard from "./pages/Dashboard";
+import Group from "./pages/Group";
+import CreateGroup from "./pages/CreateGroup";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -38,10 +40,17 @@ function App() {
       <Router>
         <Layout>
           <Routes>
+<<<<<<< HEAD
             {/* Default route goes to login */}
             <Route path="/" element={<Navigate to="/login" replace />} />
 
             {/* Public routes */}
+=======
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/groups" element={<Group />} />
+            <Route path="/groups/:groupId" element={<Group />} />
+            <Route path="/groups/create" element={<CreateGroup />} />
+>>>>>>> fd82afdf7682838533e000ecf352d65c4ac2dae6
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />

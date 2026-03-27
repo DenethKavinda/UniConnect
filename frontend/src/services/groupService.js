@@ -6,6 +6,11 @@ const groupService = {
     return response.data;
   },
 
+  createGroup: async (payload) => {
+    const response = await api.post('/groups', payload);
+    return response.data;
+  },
+
   joinGroup: async (groupId) => {
     const response = await api.post(`/groups/${groupId}/join`, {});
     return response.data;
