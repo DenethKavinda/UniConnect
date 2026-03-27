@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/NavBar";
 import Dashboard from "./pages/Dashboard";
+import Group from "./pages/Group";
+import CreateGroup from "./pages/CreateGroup";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -18,6 +20,9 @@ function App() {
         <main className="pt-[70px] min-h-screen">
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/groups" element={<Group />} />
+            <Route path="/groups/:groupId" element={<Group />} />
+            <Route path="/groups/create" element={<CreateGroup />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
