@@ -18,6 +18,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/groups" element={<Group />} />
+            <Route path="/groups/:groupId" element={<Group />} />
             <Route path="/groups/create" element={<CreateGroup />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
