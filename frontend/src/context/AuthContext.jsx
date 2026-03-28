@@ -1,52 +1,49 @@
-// import React, { createContext, useContext, useMemo, useState } from 'react';
-
-// const AuthContext = createContext({
-//   user: null,
-//   setUser: () => {},
-// });
-
-// export const AuthProvider = ({ children }) => {
-//   const [user, setUser] = useState(null);
-
-//   const value = useMemo(() => ({ user, setUser }), [user]);
-
-//   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-// };
-
-// export const useAuth = () => useContext(AuthContext);
-
-// export default AuthContext;
-
-
 import { createContext, useContext, useEffect, useState } from "react";
 import API from "../services/api";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem("token") || null);
+  // Safe token state
+  const [token, setToken] = useState(() => {
+    const savedToken = localStorage.getItem("token");
+    return savedToken && savedToken !== "undefined" ? savedToken : null;
+  });
 
-  const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem("user")) || null
-  );
+  // Safe user state with robust JSON parsing
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem("user");
+      if (savedUser && savedUser !== "undefined" && savedUser !== "null") {
+        return JSON.parse(savedUser);
+      }
+      return null;
+    } catch (error) {
+      console.warn("Invalid user in localStorage:", error);
+      localStorage.removeItem("user");
+      return null;
+    }
+  });
 
+  // Fetch current user from API if token exists but user is not loaded
   const fetchMe = async () => {
     try {
       const res = await API.get("/auth/me");
       setUser(res.data);
       localStorage.setItem("user", JSON.stringify(res.data));
-    } catch {
+    } catch (error) {
+      console.warn("Failed to fetch user:", error);
       logout();
     }
   };
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    if (savedToken && !user) {
+    if (token && !user) {
       fetchMe();
     }
-  }, []);
+  }, [token, user]);
 
+  // Login function
   const login = (tokenValue, userData) => {
     localStorage.setItem("token", tokenValue);
     localStorage.setItem("user", JSON.stringify(userData));
@@ -54,6 +51,7 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
+  // Logout function
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -68,4 +66,7 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+// Custom hook for easy context usage
 export const useAuth = () => useContext(AuthContext);
+
+export default AuthContext;

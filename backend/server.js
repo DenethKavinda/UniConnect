@@ -7,12 +7,15 @@ const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const connectDB = require("./config/db");
 const seedAdmin = require("./utils/seedAdmin");
+const path = require("path");
 
+// Routes
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const postRoutes = require("./routes/posts");
 const commentRoutes = require("./routes/comments");
 const adminRoutes = require("./routes/adminRoutes");
+const materialRoutes = require("./routes/materials");
 const groupRoutes = require("./routes/groups");
 
 const app = express();
@@ -22,7 +25,7 @@ const httpServer = http.createServer(app);
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
 if (!process.env.JWT_SECRET) {
-  console.error('❌ Missing JWT_SECRET. Set JWT_SECRET in backend/.env');
+  console.error("? Missing JWT_SECRET. Set JWT_SECRET in backend/.env");
   process.exit(1);
 }
 
@@ -30,9 +33,12 @@ if (!process.env.JWT_SECRET) {
 app.use(cors());
 app.use(express.json());
 
+// Serve uploads folder statically
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 // Test route
 app.get("/", (req, res) => {
-  res.send("Backend is running 🚀");
+  res.send("Backend is running ??");
 });
 
 // API routes
@@ -41,6 +47,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/materials", materialRoutes);
 app.use("/api/groups", groupRoutes);
 
 const PORT = process.env.PORT || 5000;
@@ -61,8 +68,10 @@ const listenWithRetry = (port, retriesLeft = 10) =>
         console.warn(`Port ${port} in use, trying ${nextPort}...`);
         return resolve(
           setTimeout(() => {
-            listenWithRetry(nextPort, retriesLeft - 1).then(resolve).catch(reject);
-          }, 250)
+            listenWithRetry(nextPort, retriesLeft - 1)
+              .then(resolve)
+              .catch(reject);
+          }, 250),
         );
       }
 
@@ -132,13 +141,14 @@ io.on("connection", (socket) => {
   });
 });
 
+// Start server
 const startServer = async () => {
   try {
     await connectDB();
     await seedAdmin();
     await listenWithRetry(PORT);
   } catch (error) {
-    console.error("❌ Failed to start server:", error?.message || error);
+    console.error("? Failed to start server:", error?.message || error);
     process.exit(1);
   }
 };
