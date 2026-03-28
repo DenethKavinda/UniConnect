@@ -19,10 +19,8 @@ function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    const email = form.email.trim().toLowerCase();
-    const password = form.password;
 
-    if (!email || !password) {
+    if (!form.email || !form.password) {
       Swal.fire({
         icon: "warning",
         title: "Missing Fields",
@@ -34,36 +32,10 @@ function LoginPage() {
       return;
     }
 
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
-    if (!emailRegex.test(email)) {
-      Swal.fire({
-        icon: "warning",
-        title: "Invalid Email",
-        text: "Please enter a valid Gmail address (example@gmail.com).",
-        confirmButtonColor: "#14b8a6",
-        background: "#0f172a",
-        color: "#ffffff",
-      });
-      return;
-    }
-
-    const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>_\-\\[\]\/`~+=;']).{8,}$/;
-    if (!passwordRegex.test(password)) {
-      Swal.fire({
-        icon: "warning",
-        title: "Invalid Password",
-        text: "Password must be at least 8 characters and include a special character.",
-        confirmButtonColor: "#14b8a6",
-        background: "#0f172a",
-        color: "#ffffff",
-      });
-      return;
-    }
-
     try {
       setLoading(true);
 
-      const res = await API.post("/auth/login", { email, password });
+      const res = await API.post("/auth/login", form);
 
       const token = res.data.token;
       const user = res.data.user;
@@ -132,7 +104,7 @@ function LoginPage() {
               value={form.email}
               onChange={handleChange}
               className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
-              placeholder="Enter Gmail (e.g., nimal@gmail.com)"
+              placeholder="Enter email"
             />
           </div>
 
@@ -146,7 +118,7 @@ function LoginPage() {
               value={form.password}
               onChange={handleChange}
               className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
-              placeholder="Enter password (e.g., Uni@1234)"
+              placeholder="Enter password"
             />
           </div>
 
