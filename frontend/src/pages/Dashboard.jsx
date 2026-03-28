@@ -29,7 +29,7 @@ const modules = [
     description:
       "Ask questions, share ideas, and participate in academic discussions.",
     icon: <FiMessageSquare />,
-    to: "/forum",
+    to: "/posts",
     gradient: "from-blue-600 to-amber-500",
     count: "45 Active Threads",
   },
