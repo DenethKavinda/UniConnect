@@ -42,13 +42,16 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: "Invalid email format" });
+      return res.status(400).json({ message: "Please enter a valid Gmail address (example@gmail.com)" });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>_\-\\[\]\/`~+=;']).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message: "Password must be at least 8 characters and include a special character"
+      });
     }
 
     const existingUser = await User.findOne({ email: email.toLowerCase() });
@@ -84,6 +87,21 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Please enter a valid Gmail address (example@gmail.com)" });
+    }
+
+    const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>_\-\\[\]\/`~+=;']).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message: "Password must be at least 8 characters and include a special character"
+      });
+    }
 
     const user = await User.findOne({ email: email.toLowerCase() });
 
