@@ -17,7 +17,13 @@
   body {
     @apply bg-[#050b18] text-white antialiased;
     font-family: 'Inter', sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
+}
+
+html[data-admin-theme="light"] body {
+  background-color: #f1f5f9;
+  color: #0f172a;
 }
 
 @layer components {

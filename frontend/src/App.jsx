@@ -1,18 +1,24 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { AdminThemeProvider } from "./context/AdminThemeContext";
 
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserManagementPage from "./pages/UserManagementPage";
+import AdminSettingsPage from "./pages/AdminSettingsPage";
+import AdminModulePlaceholderPage from "./pages/AdminModulePlaceholderPage";
+import AdminAnalyticsUserManagement from "./pages/AdminAnalyticsUserManagement";
+import AdminReportsUserManagement from "./pages/AdminReportsUserManagement";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
+      <AdminThemeProvider>
+        <BrowserRouter>
+          <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
 
           {/* public routes */}
@@ -45,16 +51,58 @@ function App() {
             element={
               <ProtectedRoute
                 allowedRoles={["admin"]}
-                allowedEmails={["yomal@gmail.com", "admin@uniconnect.com"]}
+                allowedEmails={["yomal@gmail.com", "admin1uniconnect@gmail.com"]}
               >
                 <UserManagementPage />
               </ProtectedRoute>
             }
           />
 
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </BrowserRouter>
+            <Route
+              path="/admin/settings"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminSettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics/user-management"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminAnalyticsUserManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics/:moduleKey"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminModulePlaceholderPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/reports/:moduleKey"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminModulePlaceholderPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/reports/user-management"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminReportsUserManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AdminThemeProvider>
     </AuthProvider>
   );
 }
