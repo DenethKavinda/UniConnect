@@ -26,10 +26,13 @@ function ProtectedRoute({
     allowedEmails.length === 0 || allowedEmails.includes(user.email);
 
   // if any provided condition fails => deny
-  if (!roleAllowed || !emailAllowed) {
-    if (!roleAllowed) {
-      if (user.role === "admin") return <Navigate to="/adminDashboard" replace />;
-      if (user.role === "student") return <Navigate to="/dashboard" replace />;
+  if (!roleAllowed || !emailAllowed ) {
+    if (user.role === "admin") {
+      return <Navigate to="/adminDashboard" replace />;
+    }
+
+    if (user.role === "student") {
+      return <Navigate to="/dashboard" replace />;
     }
 
     return <Navigate to="/login" replace />;

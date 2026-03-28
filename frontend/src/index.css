@@ -4,26 +4,32 @@
 
 @layer base {
   :root {
-    /* Core brand accents */
-    --accent-gold: #EAB308;
-    --accent-blue: #3B82F6;
+    /* SLIIT Official Colors [cite: 3] */
+    --sliit-blue: #00538E;
+    --sliit-gold: #F7941D;
 
     /* Dark Theme Palette */
-    --bg-dark: #0a0d17;
-    --glass-bg: rgba(255, 255, 255, 0.03);
+    --bg-dark: #050b18;
+    --glass-bg: rgba(255, 255, 255, 0.05);
     --glass-border: rgba(255, 255, 255, 0.1);
   }
 
   body {
-    @apply bg-[#0a0d17] text-white antialiased;
+    @apply bg-[#050b18] text-white antialiased;
     font-family: 'Inter', sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
+}
+
+html[data-admin-theme="light"] body {
+  background-color: #f1f5f9;
+  color: #0f172a;
 }
 
 @layer components {
   /* Member 4: Task Planner & Group Cards [cite: 172, 182] */
   .glass-card {
-    @apply bg-[rgba(255,255,255,0.03)] backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl transition-all duration-300;
+    @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl transition-all duration-300;
   }
 
   .glass-card:hover {
@@ -32,20 +38,16 @@
 
   /* Member 1: Admin & Auth Buttons [cite: 21, 30] */
   .btn-sliit-primary {
-    @apply bg-[#EAB308] hover:bg-[#CA8A04] text-[#0a0d17] font-semibold py-2 px-6 rounded-lg transition-all shadow-[0_0_15px_rgba(234,179,8,0.35)];
+    @apply bg-[#00538E] hover:bg-[#0072c6] text-white font-semibold py-2 px-6 rounded-lg transition-all shadow-[0_0_15px_rgba(0,83,142,0.4)];
   }
 
   /* Member 2 & 3: Status Accents [cite: 73, 125] */
   .accent-gold {
-    @apply text-[#EAB308] drop-shadow-[0_0_8px_rgba(234,179,8,0.3)];
-  }
-
-  .accent-blue {
-    @apply text-[#3B82F6] drop-shadow-[0_0_8px_rgba(59,130,246,0.25)];
+    @apply text-[#F7941D] drop-shadow-[0_0_8px_rgba(247,148,29,0.3)];
   }
 
   /* Input Fields for all Modules [cite: 68, 121, 168, 220] */
   .uni-input {
-    @apply w-full bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-lg px-4 py-2 focus:outline-none focus:border-[#3B82F6] focus:ring-1 focus:ring-[#3B82F6] transition-all;
+    @apply w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:outline-none focus:border-[#00538E] focus:ring-1 focus:ring-[#00538E] transition-all;
   }
 }

@@ -4,14 +4,14 @@ import { Link, useNavigate } from "react-router-dom";
 
 function RegisterPage() {
   const [form, setForm] = useState({
-    name: "",
-    email: "",
+    firstName: "",
+    lastName: "",
+    studentEmail: "",
     password: "",
     confirmPassword: "",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -23,12 +23,28 @@ function RegisterPage() {
     setError("");
     setSuccess("");
 
-    if (!form.name || !form.email || !form.password || !form.confirmPassword) {
+    const firstName = form.firstName.trim();
+    const lastName = form.lastName.trim();
+    const studentEmail = form.studentEmail.trim().toLowerCase();
+
+    // Required fields example: Nimal | Perera | nimal@gmail.com | Uni@1234
+    if (!firstName || !lastName || !studentEmail || !form.password || !form.confirmPassword) {
       return setError("All fields are required");
     }
 
-    if (form.password.length < 6) {
-      return setError("Password must be at least 6 characters");
+    if (firstName.length < 2 || lastName.length < 2) {
+      return setError("First name and last name must be at least 2 characters");
+    }
+
+    const studentEmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+    if (!studentEmailRegex.test(studentEmail)) {
+      return setError("Please enter a valid Gmail address (example@gmail.com)");
+    }
+
+    // Password example: Uni@1234 (8+ chars and at least one special character)
+    const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>_\-\\[\]\/`~+=;']).{8,}$/;
+    if (!passwordRegex.test(form.password)) {
+      return setError("Password must be at least 8 characters and include a special character");
     }
 
     if (form.password !== form.confirmPassword) {
@@ -36,109 +52,101 @@ function RegisterPage() {
     }
 
     try {
-      setLoading(true);
       await API.post("/auth/register", {
-        name: form.name,
-        email: form.email,
+        name: `${firstName} ${lastName}`,
+        email: studentEmail,
         password: form.password,
       });
 
-      setSuccess("Registration successful! Redirecting...");
+      setSuccess("Registration successful");
       setTimeout(() => {
         navigate("/login");
-      }, 1500);
+      }, 1000);
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0d17] text-slate-200 font-sans selection:bg-blue-500/30">
-      {/* Background Glows */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-amber-600/5 blur-[120px] rounded-full" />
-      </div>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#050b19] via-[#0b1224] to-[#101e39] p-4">
+      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-[#0f172a] p-8 shadow-2xl">
+        <h2 className="mb-2 text-center text-3xl font-bold text-white">
+          Register
+        </h2>
 
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md relative overflow-hidden bg-[rgba(255,255,255,0.03)] rounded-[2.5rem] p-8 md:p-10 border border-white/10 shadow-2xl backdrop-blur-md">
-          <div className="absolute -top-24 -right-24 w-80 h-80 bg-blue-600/10 blur-[100px] rounded-full" />
-          
-          <div className="relative z-10">
-            <h2 className="mb-2 text-center text-3xl font-black text-white tracking-tight">
-              Register
-            </h2>
+        <p className="mb-6 text-center text-sm text-slate-400">
+          Create your UniConnect account
+        </p>
 
-            <p className="mb-8 text-center text-sm text-slate-400 font-medium uppercase tracking-widest">
-              Create your <span className="text-blue-400">UniConnect</span> account
-            </p>
-
-            {error && (
-              <div className="mb-4 rounded-xl border border-red-800/50 bg-red-900/20 px-4 py-3 text-sm text-red-400 text-center">
-                {error}
-              </div>
-            )}
-
-            {success && (
-              <div className="mb-4 rounded-xl border border-green-800/50 bg-green-900/20 px-4 py-3 text-sm text-green-400 text-center">
-                {success}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Full name"
-                  onChange={handleChange}
-                  className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-600 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                />
-
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email address"
-                  onChange={handleChange}
-                  className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-600 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                />
-
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="Password (min. 6 characters)"
-                  onChange={handleChange}
-                  className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-600 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                />
-
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  placeholder="Confirm password"
-                  onChange={handleChange}
-                  className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-600 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-
-              <button 
-                type="submit"
-                disabled={loading}
-                className="w-full mt-6 rounded-xl bg-blue-600 py-3.5 font-black uppercase tracking-widest text-white transition-all duration-300 hover:bg-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {loading ? "Creating Account..." : "Register"}
-              </button>
-            </form>
-
-            <p className="mt-8 text-center text-sm text-slate-500 font-medium">
-              Already have an account?{" "}
-              <Link to="/login" className="font-black text-amber-500 hover:text-amber-400 transition-colors">
-                Login
-              </Link>
-            </p>
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-800 bg-red-900/40 px-4 py-3 text-sm text-red-400">
+            {error}
           </div>
-        </div>
+        )}
+
+        {success && (
+          <div className="mb-4 rounded-lg border border-green-800 bg-green-900/30 px-4 py-3 text-sm text-green-400">
+            {success}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            name="firstName"
+            value={form.firstName}
+            placeholder="First name (e.g., Nimal)"
+            onChange={handleChange}
+            className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
+          />
+
+          <input
+            type="text"
+            name="lastName"
+            value={form.lastName}
+            placeholder="Last name (e.g., Perera)"
+            onChange={handleChange}
+            className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
+          />
+
+          <input
+            type="email"
+            name="studentEmail"
+            value={form.studentEmail}
+            placeholder="Email (e.g., nimal@gmail.com)"
+            onChange={handleChange}
+            className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
+          />
+
+          <input
+            type="password"
+            name="password"
+            value={form.password}
+            placeholder="Password (e.g., Uni@1234)"
+            onChange={handleChange}
+            className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
+          />
+
+          <input
+            type="password"
+            name="confirmPassword"
+            value={form.confirmPassword}
+            placeholder="Confirm password (e.g., Uni@1234)"
+            onChange={handleChange}
+            className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
+          />
+
+          <button className="w-full rounded-xl bg-teal-500 py-3 font-semibold text-white transition-all duration-200 hover:bg-teal-600">
+            Register
+          </button>
+        </form>
+
+        <p className="mt-5 text-center text-sm text-slate-400">
+          Already have an account?{" "}
+          <Link to="/login" className="font-semibold text-teal-400 hover:text-teal-300">
+            Login
+          </Link>
+        </p>
       </div>
     </div>
   );

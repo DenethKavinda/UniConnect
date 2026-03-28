@@ -1,99 +1,108 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-  useLocation,
-} from "react-router-dom";
-import Navbar from "./components/NavBar";
-import Dashboard from "./pages/Dashboard";
-import Group from "./pages/Group";
-import CreateGroup from "./pages/CreateGroup";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { AdminThemeProvider } from "./context/AdminThemeContext";
+
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AdminDashboard from "./pages/AdminDashboard";
-import AdminLoginPage from "./pages/AdminLoginPage";
-import Material from "./pages/Material";
-import UploadedMaterials from "./pages/UploadedMaterials";
+import UserManagementPage from "./pages/UserManagementPage";
+import AdminSettingsPage from "./pages/AdminSettingsPage";
+import AdminModulePlaceholderPage from "./pages/AdminModulePlaceholderPage";
+import AdminAnalyticsUserManagement from "./pages/AdminAnalyticsUserManagement";
+import AdminReportsUserManagement from "./pages/AdminReportsUserManagement";
+import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { AuthProvider } from "./context/AuthContext";
-
-function Layout({ children }) {
-  // Show Navbar only on dashboard pages and materials pages
-  const location = useLocation();
-  const showNavbar =
-    location.pathname.startsWith("/dashboard") ||
-    location.pathname.startsWith("/materials") ||
-    location.pathname.startsWith("/uploaded-materials");
-
-  return (
-    <>
-      {showNavbar && <Navbar />}
-      <main className="pt-[70px] min-h-screen">{children}</main>
-    </>
-  );
-}
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Layout>
+      <AdminThemeProvider>
+        <BrowserRouter>
           <Routes>
-            {/* Default route goes to login */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
 
-            {/* Public routes */}
-            <Route path="/groups" element={<Group />} />
-            <Route path="/groups/:groupId" element={<Group />} />
-            <Route path="/groups/create" element={<CreateGroup />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/admin/login" element={<AdminLoginPage />} />
+          {/* public routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
 
-            {/* Protected student routes */}
+          {/* student/admin dashboard */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={["student", "admin"]}>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* all admins can access */}
+          <Route
+            path="/adminDashboard"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* only admin role + specific username */}
+          <Route
+            path="/userManagement"
+            element={
+              <ProtectedRoute
+                allowedRoles={["admin"]}
+                allowedEmails={["yomal@gmail.com", "admin1uniconnect@gmail.com"]}
+              >
+                <UserManagementPage />
+              </ProtectedRoute>
+            }
+          />
+
             <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute allowedRoles={["student"]}>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/materials"
-              element={
-                <ProtectedRoute allowedRoles={["student"]}>
-                  <Material />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/uploaded-materials"
-              element={
-                <ProtectedRoute allowedRoles={["student"]}>
-                  <UploadedMaterials />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Protected admin routes */}
-            <Route
-              path="/adminDashboard"
+              path="/admin/settings"
               element={
                 <ProtectedRoute allowedRoles={["admin"]}>
-                  <AdminDashboard />
+                  <AdminSettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics/user-management"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminAnalyticsUserManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics/:moduleKey"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminModulePlaceholderPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/reports/:moduleKey"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminModulePlaceholderPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/reports/user-management"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminReportsUserManagement />
                 </ProtectedRoute>
               }
             />
 
-            {/* Catch all */}
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
-        </Layout>
-      </Router>
+        </BrowserRouter>
+      </AdminThemeProvider>
     </AuthProvider>
   );
 }

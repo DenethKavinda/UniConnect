@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
-import Navbar from "../components/NavBar";
 import Sidebar from "../components/Sidebar";
+import { useAdminTheme } from "../context/AdminThemeContext";
 
 // Avatar with initials
 function Avatar({ name }) {
@@ -127,6 +127,7 @@ function UserManagementPage() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { isDark } = useAdminTheme();
 
   useEffect(() => {
     fetchUsers();
@@ -196,14 +197,17 @@ function UserManagementPage() {
   const totalUsers = users.length;
   const activeUsers = users.filter((u) => !u.isBlocked).length;
   const blockedUsers = users.filter((u) => u.isBlocked).length;
+  const pageBg = isDark
+    ? "linear-gradient(135deg, #050b19 0%, #0b1224 55%, #101e39 100%)"
+    : "linear-gradient(135deg, #f8fafc 0%, #eef2ff 55%, #e2e8f0 100%)";
 
   return (
     <div
       style={{
         display: "flex",
         minHeight: "100vh",
-        background: "#050b19",
-        color: "#f1f5f9",
+        background: isDark ? "#050b19" : "#f1f5f9",
+        color: isDark ? "#f1f5f9" : "#0f172a",
         fontFamily: "'Inter', sans-serif",
       }}
     >
@@ -212,14 +216,11 @@ function UserManagementPage() {
       <div
         style={{
           flex: 1,
-          background:
-            "linear-gradient(135deg, #050b19 0%, #0b1224 55%, #101e39 100%)",
+          background: pageBg,
           display: "flex",
           flexDirection: "column",
         }}
       >
-        <Navbar />
-
         <main style={{ padding: "1.75rem 2rem", flex: 1 }}>
           <div style={{ marginBottom: "1.5rem" }}>
             <h2

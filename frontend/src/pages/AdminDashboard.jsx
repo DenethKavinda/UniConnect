@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
 import Sidebar from "../components/Sidebar";
+import { useAdminTheme } from "../context/AdminThemeContext";
 import {
   AreaChart,
   Area,
@@ -16,26 +17,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-// mock trend data 
-const userGrowthData = [
-  { month: "Jan", users: 40 },
-  { month: "Feb", users: 68 },
-  { month: "Mar", users: 95 },
-  { month: "Apr", users: 120 },
-  { month: "May", users: 148 },
-  { month: "Jun", users: 175 },
-  { month: "Jul", users: 210 },
-];
-
-const activityData = [
-  { day: "Mon", logins: 30 },
-  { day: "Tue", logins: 52 },
-  { day: "Wed", logins: 45 },
-  { day: "Thu", logins: 70 },
-  { day: "Fri", logins: 63 },
-  { day: "Sat", logins: 28 },
-  { day: "Sun", logins: 18 },
-];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 //  tiny reusable stat card 
 function StatCard({ label, value, accent, icon }) {
@@ -124,58 +107,101 @@ function CustomTooltip({ active, payload, label }) {
 // main component
 function AdminDashboard() {
   const [users, setUsers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const fetchUsers = async () => {
-    try {
-      setError("");
-      setIsLoading(true);
-      const res = await API.get("/admin/users");
-      const payload = res?.data;
-      const list = Array.isArray(payload) ? payload : payload?.users;
-      setUsers(Array.isArray(list) ? list : []);
-    } catch (err) {
-      const message =
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        err?.message ||
-        "Failed to load users";
-      setError(message);
-      setUsers([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { isDark } = useAdminTheme();
 
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // const fetchUsers = async () => {
+  //   const res = await API.get("/admin/users");
+  //   setUsers(res.data);
+  // };
+  const fetchUsers = async () => {
+  try {
+    const res = await API.get("/admin/users");
+
+    const usersData = Array.isArray(res.data)
+      ? res.data
+      : res.data.users || res.data.data || [];
+
+    setUsers(usersData);
+  } catch (err) {
+    console.error(err);
+    setUsers([]);
+  }
+};
 
   const totalUsers = users.length;
   const totalAdmins = users.filter((u) => u.role === "admin").length;
   const blockedUsers = users.filter((u) => u.isBlocked).length;
   const activeUsers = users.filter((u) => !u.isBlocked).length;
 
+  const userGrowthData = (() => {
+    const now = new Date();
+    const lastSevenMonths = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (6 - i), 1);
+      return { key: `${d.getFullYear()}-${d.getMonth()}`, month: MONTHS[d.getMonth()], users: 0 };
+    });
+
+    users.forEach((u) => {
+      if (!u?.createdAt) return;
+      const created = new Date(u.createdAt);
+      if (Number.isNaN(created.getTime())) return;
+      const key = `${created.getFullYear()}-${created.getMonth()}`;
+      const bucket = lastSevenMonths.find((m) => m.key === key);
+      if (bucket) bucket.users += 1;
+    });
+
+    let runningTotal = 0;
+    return lastSevenMonths.map(({ month, users }) => {
+      runningTotal += users;
+      return { month, users: runningTotal };
+    });
+  })();
+
+  const activityData = (() => {
+    const counts = new Array(7).fill(0);
+    users.forEach((u) => {
+      if (!u?.createdAt) return;
+      const created = new Date(u.createdAt);
+      if (Number.isNaN(created.getTime())) return;
+      counts[created.getDay()] += 1;
+    });
+    return WEEK_DAYS.map((day, i) => ({ day, logins: counts[i] }));
+  })();
+
   const pieData = [
     { name: "Active", value: activeUsers },
     { name: "Blocked", value: blockedUsers },
     { name: "Admins", value: totalAdmins },
   ];
-  // Updated Colors: Blue, Amber, and Emerald
-  const PIE_COLORS = ["#3b82f6", "#f87171", "#eab308"];
+  const PIE_COLORS = ["#34d399", "#f87171", "#818cf8"];
+  const pageBg = isDark
+    ? "linear-gradient(135deg, #050b19 0%, #0b1224 55%, #101e39 100%)"
+    : "linear-gradient(135deg, #f8fafc 0%, #eef2ff 55%, #e2e8f0 100%)";
 
   return (
-    <div className="min-h-screen bg-[#0a0d17] text-slate-200 font-sans selection:bg-amber-500/30">
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-amber-600/5 blur-[120px] rounded-full" />
-      </div>
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        background: isDark ? "#050b19" : "#f1f5f9",
+        color: isDark ? "#f1f5f9" : "#0f172a",
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
+      <Sidebar />
 
-      <div className="relative z-10 flex min-h-screen">
-        <Sidebar />
-
-        <main className="flex-1 px-6 md:px-8 py-8">
+      <div
+        style={{
+          flex: 1,
+          background: pageBg,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <main style={{ padding: "1.75rem 2rem", flex: 1 }}>
           {/* ── page header ── */}
           <div style={{ marginBottom: "1.75rem" }}>
             <h2
@@ -192,12 +218,6 @@ function AdminDashboard() {
             <p style={{ fontSize: "0.83rem", color: "#64748b" }}>
               Overview of all platform activity and user metrics
             </p>
-
-            {error ? (
-              <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
-                {error}
-              </div>
-            ) : null}
           </div>
 
           {/* ── stat cards ── */}
@@ -209,17 +229,11 @@ function AdminDashboard() {
               marginBottom: "1.75rem",
             }}
           >
-            <StatCard label="Total Users" value={totalUsers} accent="#3b82f6" icon="" />
-            <StatCard label="Admins" value={totalAdmins} accent="#eab308" icon="" />
-            <StatCard label="Active Users" value={activeUsers} accent="#3b82f6" icon="" />
+            <StatCard label="Total Users" value={totalUsers} accent="#2dd4bf" icon="" />
+            <StatCard label="Admins" value={totalAdmins} accent="#818cf8" icon="" />
+            <StatCard label="Active Users" value={activeUsers} accent="#34d399" icon="" />
             <StatCard label="Blocked Users" value={blockedUsers} accent="#f87171" icon="" />
           </div>
-
-          {isLoading ? (
-            <div className="mb-7 rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3 text-sm text-slate-300">
-              Loading admin data…
-            </div>
-          ) : null}
 
           {/* ── charts row ── */}
           <div
@@ -247,15 +261,15 @@ function AdminDashboard() {
                 <AreaChart data={userGrowthData}>
                   <defs>
                     <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                   <XAxis dataKey="month" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="users" stroke="#3b82f6" strokeWidth={2.5} fill="url(#growthGrad)" dot={false} />
+                  <Area type="monotone" dataKey="users" stroke="#2dd4bf" strokeWidth={2.5} fill="url(#growthGrad)" dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -279,7 +293,7 @@ function AdminDashboard() {
                   <XAxis dataKey="day" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="logins" fill="#eab308" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="logins" fill="#818cf8" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -385,13 +399,13 @@ function AdminDashboard() {
                               width: 32,
                               height: 32,
                               borderRadius: "50%",
-                              background: "linear-gradient(135deg, #3b82f644, #eab30844)",
+                              background: "linear-gradient(135deg, #2dd4bf44, #818cf844)",
                               border: "1px solid #1e293b",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               fontSize: "0.78rem",
-                              color: "#eab308",
+                              color: "#2dd4bf",
                               fontWeight: 700,
                               flexShrink: 0,
                             }}
