@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
+import Navbar from "../components/NavBar";
 import Sidebar from "../components/Sidebar";
-import { useAdminTheme } from "../context/AdminThemeContext";
 import {
   AreaChart,
   Area,
@@ -17,8 +17,26 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+// mock trend data 
+const userGrowthData = [
+  { month: "Jan", users: 40 },
+  { month: "Feb", users: 68 },
+  { month: "Mar", users: 95 },
+  { month: "Apr", users: 120 },
+  { month: "May", users: 148 },
+  { month: "Jun", users: 175 },
+  { month: "Jul", users: 210 },
+];
+
+const activityData = [
+  { day: "Mon", logins: 30 },
+  { day: "Tue", logins: 52 },
+  { day: "Wed", logins: 45 },
+  { day: "Thu", logins: 70 },
+  { day: "Fri", logins: 63 },
+  { day: "Sat", logins: 28 },
+  { day: "Sun", logins: 18 },
+];
 
 //  tiny reusable stat card 
 function StatCard({ label, value, accent, icon }) {
@@ -107,7 +125,6 @@ function CustomTooltip({ active, payload, label }) {
 // main component
 function AdminDashboard() {
   const [users, setUsers] = useState([]);
-  const { isDark } = useAdminTheme();
 
   useEffect(() => {
     fetchUsers();
@@ -120,6 +137,7 @@ function AdminDashboard() {
   const fetchUsers = async () => {
   try {
     const res = await API.get("/admin/users");
+    console.log("API response:", res.data);
 
     const usersData = Array.isArray(res.data)
       ? res.data
@@ -137,57 +155,20 @@ function AdminDashboard() {
   const blockedUsers = users.filter((u) => u.isBlocked).length;
   const activeUsers = users.filter((u) => !u.isBlocked).length;
 
-  const userGrowthData = (() => {
-    const now = new Date();
-    const lastSevenMonths = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() - (6 - i), 1);
-      return { key: `${d.getFullYear()}-${d.getMonth()}`, month: MONTHS[d.getMonth()], users: 0 };
-    });
-
-    users.forEach((u) => {
-      if (!u?.createdAt) return;
-      const created = new Date(u.createdAt);
-      if (Number.isNaN(created.getTime())) return;
-      const key = `${created.getFullYear()}-${created.getMonth()}`;
-      const bucket = lastSevenMonths.find((m) => m.key === key);
-      if (bucket) bucket.users += 1;
-    });
-
-    let runningTotal = 0;
-    return lastSevenMonths.map(({ month, users }) => {
-      runningTotal += users;
-      return { month, users: runningTotal };
-    });
-  })();
-
-  const activityData = (() => {
-    const counts = new Array(7).fill(0);
-    users.forEach((u) => {
-      if (!u?.createdAt) return;
-      const created = new Date(u.createdAt);
-      if (Number.isNaN(created.getTime())) return;
-      counts[created.getDay()] += 1;
-    });
-    return WEEK_DAYS.map((day, i) => ({ day, logins: counts[i] }));
-  })();
-
   const pieData = [
     { name: "Active", value: activeUsers },
     { name: "Blocked", value: blockedUsers },
     { name: "Admins", value: totalAdmins },
   ];
   const PIE_COLORS = ["#34d399", "#f87171", "#818cf8"];
-  const pageBg = isDark
-    ? "linear-gradient(135deg, #050b19 0%, #0b1224 55%, #101e39 100%)"
-    : "linear-gradient(135deg, #f8fafc 0%, #eef2ff 55%, #e2e8f0 100%)";
 
   return (
     <div
       style={{
         display: "flex",
         minHeight: "100vh",
-        background: isDark ? "#050b19" : "#f1f5f9",
-        color: isDark ? "#f1f5f9" : "#0f172a",
+        background: "#050b19",
+        color: "#f1f5f9",
         fontFamily: "'Inter', sans-serif",
       }}
     >
@@ -196,11 +177,13 @@ function AdminDashboard() {
       <div
         style={{
           flex: 1,
-          background: pageBg,
+          background: "linear-gradient(135deg, #050b19 0%, #0b1224 55%, #101e39 100%)",
           display: "flex",
           flexDirection: "column",
         }}
       >
+        <Navbar />
+
         <main style={{ padding: "1.75rem 2rem", flex: 1 }}>
           {/* ── page header ── */}
           <div style={{ marginBottom: "1.75rem" }}>
