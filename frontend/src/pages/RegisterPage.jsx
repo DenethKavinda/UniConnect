@@ -4,8 +4,9 @@ import { Link, useNavigate } from "react-router-dom";
 
 function RegisterPage() {
   const [form, setForm] = useState({
-    name: "",
-    email: "",
+    firstName: "",
+    lastName: "",
+    studentEmail: "",
     password: "",
     confirmPassword: "",
   });
@@ -22,12 +23,28 @@ function RegisterPage() {
     setError("");
     setSuccess("");
 
-    if (!form.name || !form.email || !form.password || !form.confirmPassword) {
+    const firstName = form.firstName.trim();
+    const lastName = form.lastName.trim();
+    const studentEmail = form.studentEmail.trim().toLowerCase();
+
+    // Required fields example: Nimal | Perera | nimal@gmail.com | Uni@1234
+    if (!firstName || !lastName || !studentEmail || !form.password || !form.confirmPassword) {
       return setError("All fields are required");
     }
 
-    if (form.password.length < 6) {
-      return setError("Password must be at least 6 characters");
+    if (firstName.length < 2 || lastName.length < 2) {
+      return setError("First name and last name must be at least 2 characters");
+    }
+
+    const studentEmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+    if (!studentEmailRegex.test(studentEmail)) {
+      return setError("Please enter a valid Gmail address (example@gmail.com)");
+    }
+
+    // Password example: Uni@1234 (8+ chars and at least one special character)
+    const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>_\-\\[\]\/`~+=;']).{8,}$/;
+    if (!passwordRegex.test(form.password)) {
+      return setError("Password must be at least 8 characters and include a special character");
     }
 
     if (form.password !== form.confirmPassword) {
@@ -36,8 +53,8 @@ function RegisterPage() {
 
     try {
       await API.post("/auth/register", {
-        name: form.name,
-        email: form.email,
+        name: `${firstName} ${lastName}`,
+        email: studentEmail,
         password: form.password,
       });
 
@@ -76,16 +93,27 @@ function RegisterPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
-            name="name"
-            placeholder="Full name"
+            name="firstName"
+            value={form.firstName}
+            placeholder="First name (e.g., Nimal)"
+            onChange={handleChange}
+            className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
+          />
+
+          <input
+            type="text"
+            name="lastName"
+            value={form.lastName}
+            placeholder="Last name (e.g., Perera)"
             onChange={handleChange}
             className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
           />
 
           <input
             type="email"
-            name="email"
-            placeholder="Email"
+            name="studentEmail"
+            value={form.studentEmail}
+            placeholder="Email (e.g., nimal@gmail.com)"
             onChange={handleChange}
             className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
           />
@@ -93,7 +121,8 @@ function RegisterPage() {
           <input
             type="password"
             name="password"
-            placeholder="Password"
+            value={form.password}
+            placeholder="Password (e.g., Uni@1234)"
             onChange={handleChange}
             className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
           />
@@ -101,7 +130,8 @@ function RegisterPage() {
           <input
             type="password"
             name="confirmPassword"
-            placeholder="Confirm password"
+            value={form.confirmPassword}
+            placeholder="Confirm password (e.g., Uni@1234)"
             onChange={handleChange}
             className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
           />
