@@ -1,60 +1,54 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
-
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Navbar from "./components/NavBar";
+import Dashboard from "./pages/Dashboard";
+import Group from "./pages/Group";
+import CreateGroup from "./pages/CreateGroup";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AdminDashboard from "./pages/AdminDashboard";
-import UserManagementPage from "./pages/UserManagementPage";
-import Dashboard from "./pages/Dashboard";
+import AdminLoginPage from "./pages/AdminLoginPage";
+import Posts from "./pages/Posts";
+import PostDetail from "./pages/PostDetail";
+import CreatePost from "./pages/CreatePost";
 import ProtectedRoute from "./components/ProtectedRoute";
-
+import { AuthProvider } from "./context/AuthContext";
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
-
-          {/* public routes */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-
-          {/* student/admin dashboard */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={["student", "admin"]}>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* all admins can access */}
-          <Route
-            path="/adminDashboard"
-            element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* only admin role + specific username */}
-          <Route
-            path="/userManagement"
-            element={
-              <ProtectedRoute
-                allowedRoles={["admin"]}
-                allowedEmails={["yomal@gmail.com", "admin@uniconnect.com"]}
-              >
-                <UserManagementPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </BrowserRouter>
+      <Router>
+        <Navbar />
+        <main className="pt-[70px] min-h-screen">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/groups" element={<Group />} />
+            <Route path="/groups/:groupId" element={<Group />} />
+            <Route path="/groups/create" element={<CreateGroup />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["student"]}>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/adminDashboard"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/posts" element={<Posts />} />
+            <Route path="/posts/create" element={<CreatePost />} />
+            <Route path="/posts/:id" element={<PostDetail />} />
+            <Route path="*" element={<Dashboard />} />
+          </Routes>
+        </main>
+      </Router>
     </AuthProvider>
   );
 }
