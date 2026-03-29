@@ -7,28 +7,26 @@ import {
 } from "react-router-dom";
 import Navbar from "./components/NavBar";
 import Dashboard from "./pages/Dashboard";
-import Group from "./pages/Group";
-import CreateGroup from "./pages/CreateGroup";
+import Materials from "./pages/Materials";
+import Groups from "./pages/Groups";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AdminDashboard from "./pages/AdminDashboard";
-import AdminLoginPage from "./pages/AdminLoginPage";
 import Posts from "./pages/Posts";
 import PostDetail from "./pages/PostDetail";
 import CreatePost from "./pages/CreatePost";
-import Material from "./pages/Material";
-import UploadedMaterials from "./pages/UploadedMaterials";
+import UserManagementPage from "./pages/UserManagementPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 
 function Layout({ children }) {
-  // Show Navbar only on dashboard pages and materials pages
+  // Show Navbar only on student-facing pages.
   const location = useLocation();
   const showNavbar =
     location.pathname.startsWith("/dashboard") ||
+    location.pathname.startsWith("/posts") ||
     location.pathname.startsWith("/materials") ||
-    location.pathname.startsWith("/uploaded-materials") ||
-    location.pathname.startsWith("/posts");
+    location.pathname.startsWith("/groups");
 
   return (
     <>
@@ -44,16 +42,12 @@ function App() {
       <Router>
         <Layout>
           <Routes>
-            {/* Default route goes to login */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Navigate to="/posts" replace />} />
 
             {/* Public routes */}
-            <Route path="/groups" element={<Group />} />
-            <Route path="/groups/:groupId" element={<Group />} />
-            <Route path="/groups/create" element={<CreateGroup />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route path="/admin/login" element={<LoginPage />} />
 
             {/* Protected student routes */}
             <Route
@@ -69,16 +63,16 @@ function App() {
               path="/materials"
               element={
                 <ProtectedRoute allowedRoles={["student"]}>
-                  <Material />
+                  <Materials />
                 </ProtectedRoute>
               }
             />
 
             <Route
-              path="/uploaded-materials"
+              path="/groups"
               element={
                 <ProtectedRoute allowedRoles={["student"]}>
-                  <UploadedMaterials />
+                  <Groups />
                 </ProtectedRoute>
               }
             />
@@ -91,6 +85,20 @@ function App() {
                   <AdminDashboard />
                 </ProtectedRoute>
               }
+            />
+
+            <Route
+              path="/userManagement"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <UserManagementPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/users"
+              element={<Navigate to="/userManagement" replace />}
             />
 
             <Route

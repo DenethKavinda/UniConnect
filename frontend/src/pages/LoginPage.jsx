@@ -132,7 +132,7 @@ function LoginPage() {
         </form>
 
         <p className="mt-5 text-center text-sm text-slate-400">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link
             to="/register"
             className="font-semibold text-teal-400 hover:text-teal-300"

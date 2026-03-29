@@ -6,6 +6,10 @@ const mongoose = require("mongoose");
 const authRoutes = require("./routes/auth");
 const seedAdmin = require("./utils/seedAdmin");
 const adminRoutes = require("./routes/adminRoutes");
+const postRoutes = require("./routes/posts");
+const commentRoutes = require("./routes/comments");
+const userRoutes = require("./routes/users");
+const { errorHandler } = require("./middleware/errorHandler");
 
 const app = express();
 
@@ -21,6 +25,9 @@ app.get("/", (req, res) => {
 // API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/posts", postRoutes);
+app.use("/api/comments", commentRoutes);
+app.use("/api/users", userRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -28,6 +35,8 @@ app.use((req, res) => {
     message: `Route not found: ${req.originalUrl}`,
   });
 });
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 

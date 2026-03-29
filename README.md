@@ -43,7 +43,7 @@ UniConnect/
 ### Installation
 
 ```bash
-npm run install
+npm run setup
 ```
 
 ### Development

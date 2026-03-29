@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
+  const { user, token, logout } = useAuth();
+  const isLoggedIn = Boolean(token && user);
 
   // Effect to handle scroll background change
   useEffect(() => {
@@ -13,17 +17,24 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
-    { path: "/", label: "Home" },
+    { path: "/dashboard", label: "Dashboard" },
     { path: "/materials", label: "Materials" },
     { path: "/groups", label: "Groups" },
     { path: "/posts", label: "Forum" },
+    { path: "/posts/create", label: "Create" },
   ];
+
+  const handleLogout = () => {
+    logout();
+    setMobileOpen(false);
+    navigate("/login");
+  };
 
   return (
     <nav
       className={`fixed top-0 left-0 right-0 h-[70px] z-[1000] transition-all duration-300 ${scrolled
-          ? "bg-[#0a0d17]/85 backdrop-blur-xl border-b border-white/10 shadow-2xl"
-          : "bg-transparent"
+        ? "bg-[#0a0d17]/85 backdrop-blur-xl border-b border-white/10 shadow-2xl"
+        : "bg-transparent"
         }`}
     >
       <div className="max-w-7xl mx-auto h-full flex items-center justify-between px-6">
@@ -56,13 +67,27 @@ const Navbar = () => {
 
           <div className="h-5 w-[1px] bg-white/10 mx-3" />
 
-          {/* Login Button */}
-          <Link
-            to="/login"
-            className="bg-amber-500 text-[#0a0d17] px-6 py-2.5 rounded-full text-sm font-bold hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20 hover:-translate-y-0.5"
-          >
-            Login
-          </Link>
+          {isLoggedIn ? (
+            <>
+              <div className="px-3 py-1.5 rounded-full border border-white/15 bg-white/5 text-xs font-semibold text-slate-200">
+                {user?.name || user?.email || "User"}
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="bg-amber-500 text-[#0a0d17] px-5 py-2.5 rounded-full text-sm font-bold hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20 hover:-translate-y-0.5"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/login"
+              className="bg-amber-500 text-[#0a0d17] px-6 py-2.5 rounded-full text-sm font-bold hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20 hover:-translate-y-0.5"
+            >
+              Login
+            </Link>
+          )}
         </div>
 
         {/* Mobile Toggle */}
@@ -76,8 +101,8 @@ const Navbar = () => {
         {/* Mobile Menu */}
         <div
           className={`fixed inset-x-0 top-[70px] bg-[#0a0d17] border-b border-white/10 p-6 flex flex-col gap-4 md:hidden transition-all duration-300 ${mobileOpen
-              ? "translate-y-0 opacity-100"
-              : "-translate-y-10 opacity-0 pointer-events-none"
+            ? "translate-y-0 opacity-100"
+            : "-translate-y-10 opacity-0 pointer-events-none"
             }`}
         >
           {navLinks.map((link) => (
@@ -95,13 +120,28 @@ const Navbar = () => {
               {link.label}
             </NavLink>
           ))}
-          <Link
-            to="/login"
-            className="bg-amber-500 text-[#0a0d17] p-4 rounded-xl font-bold text-center shadow-lg"
-            onClick={() => setMobileOpen(false)}
-          >
-            Sign In
-          </Link>
+          {isLoggedIn ? (
+            <>
+              <div className="text-slate-200 text-sm font-semibold px-2 py-1">
+                Signed in as {user?.name || user?.email || "User"}
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="bg-amber-500 text-[#0a0d17] p-4 rounded-xl font-bold text-center shadow-lg"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/login"
+              className="bg-amber-500 text-[#0a0d17] p-4 rounded-xl font-bold text-center shadow-lg"
+              onClick={() => setMobileOpen(false)}
+            >
+              Sign In
+            </Link>
+          )}
         </div>
       </div>
     </nav>

@@ -6,7 +6,7 @@
   "scripts": {
     "start": "cd backend && npm start",
     "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
-    "install": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "setup": "npm.cmd install && cd backend && npm.cmd install && cd ../frontend && npm.cmd install",
     "build": "cd frontend && npm run build",
     "lint": "cd frontend && npm run lint"
   },
