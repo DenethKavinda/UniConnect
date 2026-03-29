@@ -10,6 +10,31 @@ function App() {
         <main className="pt-[70px] min-h-screen">
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/groups" element={<Group />} />
+            <Route path="/groups/:groupId" element={<Group />} />
+            <Route path="/groups/create" element={<CreateGroup />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["student"]}>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/adminDashboard"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/posts" element={<Posts />} />
+            <Route path="/posts/create" element={<CreatePost />} />
+            <Route path="/posts/:id" element={<PostDetail />} />
             <Route path="*" element={<Dashboard />} />
           </Routes>
         </main>
