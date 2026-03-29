@@ -161,7 +161,7 @@ const Material = () => {
             {[
               "Select correct Faculty, Year, Semester, Specialization, and Module.",
               "Ensure the document is properly named.",
-              "Allowed formats: PDF, DOCX, PPTX.",
+              "Allowed formats: PDF, DOCX, PPTX, TXT (text files), ZIP, and other common document types.",
               "After upload, you can view it in Uploaded Materials.",
             ].map((tip, idx) => (
               <li
