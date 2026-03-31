@@ -1,11 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-function ProtectedRoute({
-  children,
-  allowedRoles = [],
-  allowedEmails = [],
-}) {
+function ProtectedRoute({ children, allowedRoles = [], allowedEmails = [] }) {
   const { user, token } = useAuth();
 
   if (!token || !user) {
@@ -28,7 +24,8 @@ function ProtectedRoute({
   // if any provided condition fails => deny
   if (!roleAllowed || !emailAllowed) {
     if (!roleAllowed) {
-      if (user.role === "admin") return <Navigate to="/adminDashboard" replace />;
+      if (user.role === "admin")
+        return <Navigate to="/adminDashboard" replace />;
       if (user.role === "student") return <Navigate to="/dashboard" replace />;
     }
 

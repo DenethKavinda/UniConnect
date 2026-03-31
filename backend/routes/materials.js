@@ -32,7 +32,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       specialization,
       module,
       fileUrl: req.file.filename,
-      // status will be "pending" by default (from model)
+      // status = "pending" by default
     });
 
     await newMaterial.save();
@@ -43,7 +43,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
   }
 });
 
-// ---------------- GET ONLY APPROVED MATERIALS ----------------
+// ---------------- GET ONLY APPROVED ----------------
 router.get("/", async (req, res) => {
   try {
     const materials = await Material.find({ status: "approved" }).sort({
@@ -51,12 +51,23 @@ router.get("/", async (req, res) => {
     });
     res.json(materials);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ msg: "Server error" });
   }
 });
 
-// ---------------- GET PENDING MATERIALS (ADMIN) ----------------
+// ---------------- GET ALL (ADMIN) ----------------
+router.get("/all", async (req, res) => {
+  try {
+    const materials = await Material.find({}).sort({
+      uploadedAt: -1,
+    });
+    res.json(materials);
+  } catch (err) {
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+// ---------------- GET PENDING (ADMIN) ----------------
 router.get("/pending", async (req, res) => {
   try {
     const materials = await Material.find({ status: "pending" }).sort({
@@ -64,12 +75,11 @@ router.get("/pending", async (req, res) => {
     });
     res.json(materials);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ msg: "Server error" });
   }
 });
 
-// ---------------- APPROVE MATERIAL ----------------
+// ---------------- APPROVE ----------------
 router.put("/approve/:id", async (req, res) => {
   try {
     const material = await Material.findByIdAndUpdate(
@@ -80,12 +90,11 @@ router.put("/approve/:id", async (req, res) => {
 
     res.json(material);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ msg: "Server error" });
   }
 });
 
-// ---------------- REJECT MATERIAL ----------------
+// ---------------- REJECT ----------------
 router.put("/reject/:id", async (req, res) => {
   try {
     const material = await Material.findByIdAndUpdate(
@@ -96,12 +105,35 @@ router.put("/reject/:id", async (req, res) => {
 
     res.json(material);
   } catch (err) {
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+// ---------------- DELETE MATERIAL ----------------
+router.delete("/:id", async (req, res) => {
+  try {
+    const material = await Material.findById(req.params.id);
+    if (!material) {
+      return res.status(404).json({ msg: "Material not found" });
+    }
+
+    // Delete the file from uploads folder
+    const filePath = path.join(__dirname, "../uploads", material.fileUrl);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    // Delete from database
+    await Material.findByIdAndDelete(req.params.id);
+
+    res.json({ message: "Material deleted successfully" });
+  } catch (err) {
     console.error(err);
     res.status(500).json({ msg: "Server error" });
   }
 });
 
-// ---------------- DOWNLOAD / VIEW ----------------
+// ---------------- FILE VIEW ----------------
 router.get("/file/:filename", (req, res) => {
   const filePath = path.join(__dirname, "../uploads", req.params.filename);
 

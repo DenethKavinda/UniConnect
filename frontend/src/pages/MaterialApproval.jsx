@@ -1,21 +1,14 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import API from "../services/api";
 
 const MaterialApproval = () => {
   const [materials, setMaterials] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const fetchPending = async () => {
-    try {
-      const res = await axios.get(
-        "http://localhost:5000/api/materials/pending",
-      );
-      setMaterials(res.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    const res = await API.get("/materials/pending");
+    setMaterials(res.data);
   };
 
   useEffect(() => {
@@ -23,12 +16,20 @@ const MaterialApproval = () => {
   }, []);
 
   const approve = async (id) => {
-    await axios.put(`http://localhost:5000/api/materials/approve/${id}`);
+    await API.put(`/materials/approve/${id}`);
     fetchPending();
   };
 
   const reject = async (id) => {
-    await axios.put(`http://localhost:5000/api/materials/reject/${id}`);
+    await API.put(`/materials/reject/${id}`);
+    fetchPending();
+  };
+
+  const remove = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this material?")) {
+      return;
+    }
+    await API.delete(`/materials/${id}`);
     fetchPending();
   };
 
@@ -36,48 +37,42 @@ const MaterialApproval = () => {
     <div className="p-10 text-white bg-[#0a0d17] min-h-screen">
       <h2 className="text-3xl font-bold mb-6">Material Approval</h2>
 
-      {loading ? (
-        <p>Loading...</p>
-      ) : materials.length === 0 ? (
-        <p className="text-gray-400">No pending materials</p>
-      ) : (
-        <div className="grid gap-6">
-          {materials.map((m) => (
-            <div key={m._id} className="bg-[#1a1d2a] p-5 rounded-xl border">
-              <h3 className="text-xl text-amber-400">{m.module}</h3>
+      {/* ✅ NAV BUTTON */}
+      <button
+        onClick={() => navigate("/materials-delete")}
+        className="mb-6 bg-blue-600 px-4 py-2 rounded"
+      >
+        Go to Delete Page
+      </button>
 
-              <p>
-                {m.faculty} | Year {m.year} | Sem {m.semester}
-              </p>
+      {materials.map((m) => (
+        <div key={m._id} className="bg-[#1a1d2a] p-5 rounded mb-4">
+          <h3 className="text-amber-400">{m.module}</h3>
 
-              <div className="flex gap-3 mt-3">
-                <a
-                  href={`http://localhost:5000/api/materials/file/${m.fileUrl}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="bg-blue-500 px-4 py-2 rounded"
-                >
-                  View
-                </a>
+          <div className="flex gap-3 mt-3">
+            <button
+              onClick={() => approve(m._id)}
+              className="bg-green-500 px-4 py-2 rounded"
+            >
+              Approve
+            </button>
 
-                <button
-                  onClick={() => approve(m._id)}
-                  className="bg-green-500 px-4 py-2 rounded"
-                >
-                  Approve
-                </button>
+            <button
+              onClick={() => reject(m._id)}
+              className="bg-red-500 px-4 py-2 rounded"
+            >
+              Reject
+            </button>
 
-                <button
-                  onClick={() => reject(m._id)}
-                  className="bg-red-500 px-4 py-2 rounded"
-                >
-                  Reject
-                </button>
-              </div>
-            </div>
-          ))}
+            <button
+              onClick={() => remove(m._id)}
+              className="bg-red-700 px-4 py-2 rounded"
+            >
+              Delete
+            </button>
+          </div>
         </div>
-      )}
+      ))}
     </div>
   );
 };

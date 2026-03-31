@@ -17,6 +17,7 @@ import AdminLoginPage from "./pages/AdminLoginPage";
 import Material from "./pages/Material";
 import UploadedMaterials from "./pages/UploadedMaterials";
 import MaterialApproval from "./pages/MaterialApproval"; // ✅ NEW
+import MaterialsDelete from "./pages/MaterialsDelete";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -85,6 +86,14 @@ function App() {
             />
 
             {/* ---------------- ADMIN ---------------- */}
+            <Route
+              path="/materials-delete"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <MaterialsDelete />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/adminDashboard"
               element={
