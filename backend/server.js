@@ -49,6 +49,7 @@ app.use("/api/comments", commentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/materials", materialRoutes);
 app.use("/api/groups", groupRoutes);
+app.use("/api/materials", require("./routes/materials"));
 
 const PORT = process.env.PORT || 5000;
 

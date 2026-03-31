@@ -5,6 +5,7 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
+
 import Navbar from "./components/NavBar";
 import Dashboard from "./pages/Dashboard";
 import Group from "./pages/Group";
@@ -15,16 +16,20 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import Material from "./pages/Material";
 import UploadedMaterials from "./pages/UploadedMaterials";
+import MaterialApproval from "./pages/MaterialApproval"; // ✅ NEW
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 
 function Layout({ children }) {
-  // Show Navbar only on dashboard pages and materials pages
   const location = useLocation();
+
+  // ✅ UPDATED: include admin pages also
   const showNavbar =
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/materials") ||
     location.pathname.startsWith("/uploaded-materials");
+  // location.pathname.startsWith("/adminDashboard") ||
+  // location.pathname.startsWith("/material-approval"); // ✅ NEW
 
   return (
     <>
@@ -40,7 +45,7 @@ function App() {
       <Router>
         <Layout>
           <Routes>
-            {/* Default route goes to login */}
+            {/* Default route */}
             <Route path="/" element={<Navigate to="/login" replace />} />
 
             {/* Public routes */}
@@ -51,7 +56,7 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
 
-            {/* Protected student routes */}
+            {/* ---------------- STUDENT ---------------- */}
             <Route
               path="/dashboard"
               element={
@@ -79,12 +84,22 @@ function App() {
               }
             />
 
-            {/* Protected admin routes */}
+            {/* ---------------- ADMIN ---------------- */}
             <Route
               path="/adminDashboard"
               element={
                 <ProtectedRoute allowedRoles={["admin"]}>
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ NEW: Material Approval Page */}
+            <Route
+              path="/material-approval"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <MaterialApproval />
                 </ProtectedRoute>
               }
             />

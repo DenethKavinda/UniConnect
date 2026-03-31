@@ -7,6 +7,13 @@ const materialSchema = new mongoose.Schema({
   specialization: { type: String, required: true },
   module: { type: String, required: true },
   fileUrl: { type: String, required: true },
+
+  status: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
+
   uploadedAt: { type: Date, default: Date.now },
 });
 

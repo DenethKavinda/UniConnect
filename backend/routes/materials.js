@@ -31,7 +31,8 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       semester,
       specialization,
       module,
-      fileUrl: req.file.filename, // only store filename
+      fileUrl: req.file.filename,
+      // status will be "pending" by default (from model)
     });
 
     await newMaterial.save();
@@ -42,11 +43,58 @@ router.post("/upload", upload.single("file"), async (req, res) => {
   }
 });
 
-// ---------------- GET ALL MATERIALS ----------------
+// ---------------- GET ONLY APPROVED MATERIALS ----------------
 router.get("/", async (req, res) => {
   try {
-    const materials = await Material.find().sort({ uploadedAt: -1 });
+    const materials = await Material.find({ status: "approved" }).sort({
+      uploadedAt: -1,
+    });
     res.json(materials);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+// ---------------- GET PENDING MATERIALS (ADMIN) ----------------
+router.get("/pending", async (req, res) => {
+  try {
+    const materials = await Material.find({ status: "pending" }).sort({
+      uploadedAt: -1,
+    });
+    res.json(materials);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+// ---------------- APPROVE MATERIAL ----------------
+router.put("/approve/:id", async (req, res) => {
+  try {
+    const material = await Material.findByIdAndUpdate(
+      req.params.id,
+      { status: "approved" },
+      { new: true },
+    );
+
+    res.json(material);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+// ---------------- REJECT MATERIAL ----------------
+router.put("/reject/:id", async (req, res) => {
+  try {
+    const material = await Material.findByIdAndUpdate(
+      req.params.id,
+      { status: "rejected" },
+      { new: true },
+    );
+
+    res.json(material);
   } catch (err) {
     console.error(err);
     res.status(500).json({ msg: "Server error" });
@@ -60,7 +108,6 @@ router.get("/file/:filename", (req, res) => {
   if (fs.existsSync(filePath)) {
     const ext = path.extname(filePath).toLowerCase();
 
-    // Set proper content type
     let contentType = "application/octet-stream";
     if (ext === ".pdf") contentType = "application/pdf";
     else if (ext === ".docx")
@@ -75,6 +122,7 @@ router.get("/file/:filename", (req, res) => {
       "Content-Disposition",
       `inline; filename="${req.params.filename}"`,
     );
+
     res.sendFile(filePath);
   } else {
     res.status(404).send("File not found");
