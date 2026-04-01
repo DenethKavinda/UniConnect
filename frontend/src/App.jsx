@@ -27,7 +27,8 @@ function Layout({ children }) {
   // ✅ UPDATED: include admin pages also
   const showNavbar =
     location.pathname.startsWith("/dashboard") ||
-    location.pathname.startsWith("/materials") ||
+    (location.pathname.startsWith("/materials") &&
+      !location.pathname.startsWith("/materials-delete")) ||
     location.pathname.startsWith("/uploaded-materials");
   // location.pathname.startsWith("/adminDashboard") ||
   // location.pathname.startsWith("/material-approval"); // ✅ NEW

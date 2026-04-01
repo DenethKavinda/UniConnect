@@ -10,7 +10,13 @@ import {
 
 const UploadedMaterials = () => {
   const [materials, setMaterials] = useState([]);
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState({
+    faculty: "",
+    year: "",
+    semester: "",
+    specialization: "",
+    module: "",
+  });
 
   useEffect(() => {
     fetchMaterials();
@@ -25,6 +31,72 @@ const UploadedMaterials = () => {
     }
   };
 
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    const updatedFilters = { ...filters, [name]: value };
+
+    // Reset dependent filters
+    if (name === "faculty") {
+      updatedFilters.year = "";
+      updatedFilters.semester = "";
+      updatedFilters.specialization = "";
+      updatedFilters.module = "";
+    } else if (name === "year") {
+      updatedFilters.semester = "";
+      updatedFilters.specialization = "";
+      updatedFilters.module = "";
+    } else if (name === "semester") {
+      updatedFilters.specialization = "";
+      updatedFilters.module = "";
+    } else if (name === "specialization") {
+      updatedFilters.module = "";
+    }
+
+    setFilters(updatedFilters);
+  };
+
+  // Get relevant options based on previous selections
+  const getOptions = (field) => {
+    let filtered = materials;
+
+    if (field === "year") {
+      if (filters.faculty)
+        filtered = filtered.filter((m) => m.faculty === filters.faculty);
+    } else if (field === "semester") {
+      if (filters.faculty)
+        filtered = filtered.filter((m) => m.faculty === filters.faculty);
+      if (filters.year)
+        filtered = filtered.filter((m) => m.year === filters.year);
+    } else if (field === "specialization") {
+      if (filters.faculty)
+        filtered = filtered.filter((m) => m.faculty === filters.faculty);
+      if (filters.year)
+        filtered = filtered.filter((m) => m.year === filters.year);
+      if (filters.semester)
+        filtered = filtered.filter((m) => m.semester === filters.semester);
+    } else if (field === "module") {
+      if (filters.faculty)
+        filtered = filtered.filter((m) => m.faculty === filters.faculty);
+      if (filters.year)
+        filtered = filtered.filter((m) => m.year === filters.year);
+      if (filters.semester)
+        filtered = filtered.filter((m) => m.semester === filters.semester);
+      if (filters.specialization)
+        filtered = filtered.filter(
+          (m) => m.specialization === filters.specialization,
+        );
+    }
+
+    const optionsSet = new Set(filtered.map((m) => m[field]));
+    return Array.from(optionsSet);
+  };
+
+  const filteredMaterials = materials.filter((m) =>
+    Object.keys(filters).every((key) =>
+      filters[key] ? m[key] === filters[key] : true,
+    ),
+  );
+
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this document?")) return;
     try {
@@ -34,16 +106,6 @@ const UploadedMaterials = () => {
       console.error(err);
     }
   };
-
-  const handleFilter = (e) => {
-    setFilters({ ...filters, [e.target.name]: e.target.value });
-  };
-
-  const filtered = materials.filter((m) =>
-    Object.keys(filters).every((key) =>
-      filters[key] ? m[key] === filters[key] : true,
-    ),
-  );
 
   return (
     <div className="p-10 bg-[#0a0d17] min-h-screen text-white">
@@ -59,23 +121,80 @@ const UploadedMaterials = () => {
 
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-        {["faculty", "year", "semester", "specialization", "module"].map(
-          (field) => (
-            <select
-              key={field}
-              name={field}
-              onChange={handleFilter}
-              className="bg-[#1a1d2a] border border-white/20 rounded p-2 text-white"
-            >
-              <option value="">{field}</option>
-            </select>
-          ),
-        )}
+        <select
+          name="faculty"
+          value={filters.faculty}
+          onChange={handleFilterChange}
+          className="bg-[#1a1d2a] border border-white/20 rounded p-2 text-white"
+        >
+          <option value="">Faculty</option>
+          {getOptions("faculty").map((f) => (
+            <option key={f} value={f}>
+              {f}
+            </option>
+          ))}
+        </select>
+
+        <select
+          name="year"
+          value={filters.year}
+          onChange={handleFilterChange}
+          className="bg-[#1a1d2a] border border-white/20 rounded p-2 text-white"
+        >
+          <option value="">Year</option>
+          {getOptions("year").map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </select>
+
+        <select
+          name="semester"
+          value={filters.semester}
+          onChange={handleFilterChange}
+          className="bg-[#1a1d2a] border border-white/20 rounded p-2 text-white"
+        >
+          <option value="">Semester</option>
+          {getOptions("semester").map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+
+        <select
+          name="specialization"
+          value={filters.specialization}
+          onChange={handleFilterChange}
+          className="bg-[#1a1d2a] border border-white/20 rounded p-2 text-white"
+        >
+          <option value="">Specialization</option>
+          {getOptions("specialization").map((sp) => (
+            <option key={sp} value={sp}>
+              {sp}
+            </option>
+          ))}
+        </select>
+
+        <select
+          name="module"
+          value={filters.module}
+          onChange={handleFilterChange}
+          className="bg-[#1a1d2a] border border-white/20 rounded p-2 text-white"
+        >
+          <option value="">Module</option>
+          {getOptions("module").map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Materials List */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filtered.map((m) => (
+        {filteredMaterials.map((m) => (
           <div
             key={m._id}
             className="bg-[#1a1d2a] p-6 rounded-2xl border flex flex-col gap-4"
