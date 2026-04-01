@@ -2,6 +2,8 @@ import { useState } from "react";
 import API from "../services/api";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useAdminTheme } from "../context/AdminThemeContext";
+import { getAdminTheme } from "../theme/adminTheme";
 import Swal from "sweetalert2";
 
 function LoginPage() {
@@ -11,6 +13,8 @@ function LoginPage() {
 
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { isDark } = useAdminTheme();
+  const t = getAdminTheme(isDark);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -25,9 +29,9 @@ function LoginPage() {
         icon: "warning",
         title: "Missing Fields",
         text: "Please enter your email and password.",
-        confirmButtonColor: "#14b8a6",
-        background: "#0f172a",
-        color: "#ffffff",
+        confirmButtonColor: t.accent,
+        background: t.surfaceSoft || t.surfaceMuted,
+        color: t.text,
       });
       return;
     }
@@ -48,8 +52,8 @@ function LoginPage() {
         text: "Welcome to UniConnect!",
         timer: 1500,
         showConfirmButton: false,
-        background: "#0f172a",
-        color: "#ffffff",
+        background: t.surfaceSoft || t.surfaceMuted,
+        color: t.text,
       });
 
       if (user?.role === "admin") {
@@ -67,9 +71,9 @@ function LoginPage() {
         icon: "error",
         title: "Login Failed",
         text: message,
-        confirmButtonColor: "#ef4444",
-        background: "#0f172a",
-        color: "#ffffff",
+        confirmButtonColor: t.red,
+        background: t.surfaceSoft || t.surfaceMuted,
+        color: t.text,
       });
     } finally {
       setLoading(false);
@@ -77,13 +81,13 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#050b19] via-[#0b1224] to-[#101e39] p-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-[#0f172a] p-8 shadow-2xl">
-        <h2 className="mb-2 text-center text-3xl font-bold text-white">
+    <div className="app-page flex min-h-screen items-center justify-center p-4">
+      <div className="app-surface w-full max-w-md rounded-2xl p-8 shadow-2xl">
+        <h2 className="mb-2 text-center text-3xl font-bold text-[var(--app-text)]">
           Login
         </h2>
 
-        <p className="mb-6 text-center text-sm text-slate-400">
+        <p className="app-text-muted mb-6 text-center text-sm">
           Sign in to UniConnect
         </p>
 
@@ -95,7 +99,7 @@ function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-300">
+            <label className="app-text-muted mb-1 block text-sm font-medium">
               Email
             </label>
             <input
@@ -103,13 +107,13 @@ function LoginPage() {
               name="email"
               value={form.email}
               onChange={handleChange}
-              className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
+              className="app-input w-full rounded-xl px-4 py-3 placeholder-slate-500"
               placeholder="Enter email"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-300">
+            <label className="app-text-muted mb-1 block text-sm font-medium">
               Password
             </label>
             <input
@@ -117,7 +121,7 @@ function LoginPage() {
               name="password"
               value={form.password}
               onChange={handleChange}
-              className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
+              className="app-input w-full rounded-xl px-4 py-3 placeholder-slate-500"
               placeholder="Enter password"
             />
           </div>
@@ -125,17 +129,17 @@ function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-teal-500 py-3 font-semibold text-white transition-all duration-200 hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-70"
+            className="app-btn-primary w-full rounded-xl py-3 font-semibold transition-all duration-200 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
-        <p className="mt-5 text-center text-sm text-slate-400">
+        <p className="app-text-muted mt-5 text-center text-sm">
           Don't have an account?{" "}
           <Link
             to="/register"
-            className="font-semibold text-teal-400 hover:text-teal-300"
+            className="font-semibold text-[var(--app-primary)] hover:brightness-110"
           >
             Register
           </Link>

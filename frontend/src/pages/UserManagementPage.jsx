@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
-import Navbar from "../components/NavBar";
 import Sidebar from "../components/Sidebar";
+import { useAdminTheme } from "../context/AdminThemeContext";
+import { getAdminTheme } from "../theme/adminTheme";
 
-// Avatar with initials
-function Avatar({ name }) {
+function Avatar({ name, t }) {
   return (
     <span
       style={{
@@ -12,12 +12,12 @@ function Avatar({ name }) {
         height: 34,
         borderRadius: "50%",
         background: "linear-gradient(135deg, #2dd4bf33, #818cf833)",
-        border: "1px solid #1e293b",
+        border: `1px solid ${t.border}`,
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
         fontSize: "0.78rem",
-        color: "#2dd4bf",
+        color: t.accent,
         fontWeight: 700,
         flexShrink: 0,
       }}
@@ -27,8 +27,7 @@ function Avatar({ name }) {
   );
 }
 
-// Status badge
-function StatusBadge({ isBlocked }) {
+function StatusBadge({ isBlocked, t }) {
   return (
     <span
       style={{
@@ -44,12 +43,12 @@ function StatusBadge({ isBlocked }) {
           ? {
               background: "#450a0a40",
               border: "1px solid #7f1d1d",
-              color: "#f87171",
+              color: t.red,
             }
           : {
               background: "#052e1640",
               border: "1px solid #14532d",
-              color: "#34d399",
+              color: t.green,
             }),
       }}
     >
@@ -58,7 +57,7 @@ function StatusBadge({ isBlocked }) {
           width: 6,
           height: 6,
           borderRadius: "50%",
-          background: isBlocked ? "#f87171" : "#34d399",
+          background: isBlocked ? t.red : t.green,
         }}
       />
       {isBlocked ? "Blocked" : "Active"}
@@ -66,7 +65,6 @@ function StatusBadge({ isBlocked }) {
   );
 }
 
-// Action button
 function ActionBtn({ onClick, color, children }) {
   const colors = {
     yellow: {
@@ -128,6 +126,9 @@ function UserManagementPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const { isDark } = useAdminTheme();
+  const t = getAdminTheme(isDark);
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -136,12 +137,11 @@ function UserManagementPage() {
     try {
       setLoading(true);
       setError("");
-
       const res = await API.get("/admin/users");
       setUsers(res.data.users || []);
-    } catch (error) {
-      console.error(error);
-      setError(error.response?.data?.message || "Failed to load users");
+    } catch (fetchError) {
+      console.error(fetchError);
+      setError(fetchError.response?.data?.message || "Failed to load users");
       setUsers([]);
     } finally {
       setLoading(false);
@@ -152,8 +152,8 @@ function UserManagementPage() {
     try {
       await API.put(`/admin/users/${id}/role`, { role });
       fetchUsers();
-    } catch (error) {
-      alert(error.response?.data?.message || "Role update failed");
+    } catch (roleError) {
+      alert(roleError.response?.data?.message || "Role update failed");
     }
   };
 
@@ -161,8 +161,8 @@ function UserManagementPage() {
     try {
       await API.put(`/admin/users/${id}/block`, { isBlocked: !isBlocked });
       fetchUsers();
-    } catch (error) {
-      alert(error.response?.data?.message || "Status update failed");
+    } catch (blockError) {
+      alert(blockError.response?.data?.message || "Status update failed");
     }
   };
 
@@ -173,8 +173,8 @@ function UserManagementPage() {
     try {
       await API.delete(`/admin/users/${id}`);
       fetchUsers();
-    } catch (error) {
-      alert(error.response?.data?.message || "Delete failed");
+    } catch (deleteError) {
+      alert(deleteError.response?.data?.message || "Delete failed");
     }
   };
 
@@ -202,8 +202,8 @@ function UserManagementPage() {
       style={{
         display: "flex",
         minHeight: "100vh",
-        background: "#050b19",
-        color: "#f1f5f9",
+        background: t.pageBase,
+        color: t.text,
         fontFamily: "'Inter', sans-serif",
       }}
     >
@@ -212,28 +212,25 @@ function UserManagementPage() {
       <div
         style={{
           flex: 1,
-          background:
-            "linear-gradient(135deg, #050b19 0%, #0b1224 55%, #101e39 100%)",
+          background: t.pageBg,
           display: "flex",
           flexDirection: "column",
         }}
       >
-        <Navbar />
-
         <main style={{ padding: "1.75rem 2rem", flex: 1 }}>
           <div style={{ marginBottom: "1.5rem" }}>
             <h2
               style={{
                 fontSize: "1.6rem",
                 fontWeight: 800,
-                color: "#f1f5f9",
+                color: t.text,
                 letterSpacing: "-0.03em",
                 marginBottom: "0.25rem",
               }}
             >
               User Management
             </h2>
-            <p style={{ fontSize: "0.83rem", color: "#64748b" }}>
+            <p style={{ fontSize: "0.83rem", color: t.textSubtle }}>
               Manage users, roles, and account status
             </p>
           </div>
@@ -247,9 +244,9 @@ function UserManagementPage() {
             }}
           >
             {[
-              { label: "Total", value: totalUsers, color: "#2dd4bf" },
-              { label: "Active", value: activeUsers, color: "#34d399" },
-              { label: "Blocked", value: blockedUsers, color: "#f87171" },
+              { label: "Total", value: totalUsers, color: t.accent },
+              { label: "Active", value: activeUsers, color: t.green },
+              { label: "Blocked", value: blockedUsers, color: t.red },
             ].map(({ label, value, color }) => (
               <div
                 key={label}
@@ -257,14 +254,14 @@ function UserManagementPage() {
                   display: "flex",
                   alignItems: "center",
                   gap: "0.5rem",
-                  background: "#0f172a",
-                  border: "1px solid #1e293b",
+                  background: t.surfaceMuted,
+                  border: `1px solid ${t.border}`,
                   borderRadius: "999px",
                   padding: "0.4rem 1rem",
                   fontSize: "0.8rem",
                 }}
               >
-                <span style={{ color: "#94a3b8" }}>{label}</span>
+                <span style={{ color: t.textMuted }}>{label}</span>
                 <span
                   style={{
                     color,
@@ -290,7 +287,7 @@ function UserManagementPage() {
             <div style={{ position: "relative", flex: "1 1 260px", maxWidth: 380 }}>
               <input
                 type="text"
-                placeholder="Search by name or email…"
+                placeholder="Search by name or email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{
@@ -300,9 +297,9 @@ function UserManagementPage() {
                   paddingTop: "0.65rem",
                   paddingBottom: "0.65rem",
                   borderRadius: "0.85rem",
-                  border: "1px solid #1e293b",
-                  background: "#0f172a",
-                  color: "#f1f5f9",
+                  border: `1px solid ${t.border}`,
+                  background: t.surfaceMuted,
+                  color: t.text,
                   fontSize: "0.85rem",
                   outline: "none",
                   boxSizing: "border-box",
@@ -316,9 +313,9 @@ function UserManagementPage() {
               style={{
                 padding: "0.65rem 1rem",
                 borderRadius: "0.85rem",
-                border: "1px solid #1e293b",
-                background: "#0f172a",
-                color: "#f1f5f9",
+                border: `1px solid ${t.border}`,
+                background: t.surfaceMuted,
+                color: t.text,
                 fontSize: "0.85rem",
                 outline: "none",
                 cursor: "pointer",
@@ -335,9 +332,9 @@ function UserManagementPage() {
               style={{
                 padding: "0.65rem 1rem",
                 borderRadius: "0.85rem",
-                border: "1px solid #1e293b",
-                background: "#0f172a",
-                color: "#f1f5f9",
+                border: `1px solid ${t.border}`,
+                background: t.surfaceMuted,
+                color: t.text,
                 fontSize: "0.85rem",
                 outline: "none",
                 cursor: "pointer",
@@ -352,7 +349,7 @@ function UserManagementPage() {
               style={{
                 marginLeft: "auto",
                 fontSize: "0.78rem",
-                color: "#475569",
+                color: t.textSubtle,
                 whiteSpace: "nowrap",
               }}
             >
@@ -362,10 +359,10 @@ function UserManagementPage() {
 
           <div
             style={{
-              background: "linear-gradient(135deg, #0f172a, #101e39)",
-              border: "1px solid #1e293b",
+              background: t.surface,
+              border: `1px solid ${t.border}`,
               borderRadius: "1.25rem",
-              boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+              boxShadow: t.shadow,
               overflow: "hidden",
             }}
           >
@@ -378,7 +375,7 @@ function UserManagementPage() {
                 }}
               >
                 <thead>
-                  <tr style={{ background: "#0b1224" }}>
+                  <tr style={{ background: t.surfaceMuted }}>
                     {["User", "Email", "Role", "Status", "Actions"].map((h) => (
                       <th
                         key={h}
@@ -389,8 +386,8 @@ function UserManagementPage() {
                           fontSize: "0.73rem",
                           letterSpacing: "0.06em",
                           textTransform: "uppercase",
-                          color: "#64748b",
-                          borderBottom: "1px solid #1e293b",
+                          color: t.textSubtle,
+                          borderBottom: `1px solid ${t.border}`,
                           whiteSpace: "nowrap",
                         }}
                       >
@@ -408,7 +405,7 @@ function UserManagementPage() {
                         style={{
                           padding: "3rem",
                           textAlign: "center",
-                          color: "#94a3b8",
+                          color: t.textMuted,
                         }}
                       >
                         Loading users...
@@ -421,7 +418,7 @@ function UserManagementPage() {
                         style={{
                           padding: "3rem",
                           textAlign: "center",
-                          color: "#f87171",
+                          color: t.red,
                         }}
                       >
                         {error}
@@ -434,13 +431,13 @@ function UserManagementPage() {
                         style={{
                           borderBottom:
                             idx < filteredUsers.length - 1
-                              ? "1px solid #1e293b"
+                              ? `1px solid ${t.border}`
                               : "none",
                           transition: "background 0.15s",
                           cursor: "default",
                         }}
                         onMouseEnter={(e) =>
-                          (e.currentTarget.style.background = "#101e3980")
+                          (e.currentTarget.style.background = isDark ? "#101e3980" : "#f1f5f980")
                         }
                         onMouseLeave={(e) =>
                           (e.currentTarget.style.background = "transparent")
@@ -454,14 +451,14 @@ function UserManagementPage() {
                               gap: "0.7rem",
                             }}
                           >
-                            <Avatar name={user.name} />
-                            <span style={{ color: "#f1f5f9", fontWeight: 600 }}>
+                            <Avatar name={user.name} t={t} />
+                            <span style={{ color: t.text, fontWeight: 600 }}>
                               {user.name}
                             </span>
                           </div>
                         </td>
 
-                        <td style={{ padding: "0.9rem 1.1rem", color: "#94a3b8" }}>
+                        <td style={{ padding: "0.9rem 1.1rem", color: t.textMuted }}>
                           {user.email}
                         </td>
 
@@ -474,9 +471,9 @@ function UserManagementPage() {
                             style={{
                               padding: "0.35rem 0.75rem",
                               borderRadius: "0.6rem",
-                              border: "1px solid #1e293b",
-                              background: "#0b1224",
-                              color: user.role === "admin" ? "#818cf8" : "#94a3b8",
+                              border: `1px solid ${t.border}`,
+                              background: t.surfaceMuted,
+                              color: user.role === "admin" ? t.purple : t.textMuted,
                               fontSize: "0.8rem",
                               fontWeight: 600,
                               outline: "none",
@@ -490,7 +487,7 @@ function UserManagementPage() {
                         </td>
 
                         <td style={{ padding: "0.9rem 1.1rem" }}>
-                          <StatusBadge isBlocked={user.isBlocked} />
+                          <StatusBadge isBlocked={user.isBlocked} t={t} />
                         </td>
 
                         <td style={{ padding: "0.9rem 1.1rem" }}>
@@ -527,7 +524,7 @@ function UserManagementPage() {
                         style={{
                           padding: "3rem",
                           textAlign: "center",
-                          color: "#475569",
+                          color: t.textSubtle,
                         }}
                       >
                         No users found
