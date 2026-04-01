@@ -1,6 +1,8 @@
 import { useState } from "react";
 import API from "../services/api";
 import { Link, useNavigate } from "react-router-dom";
+import { useAdminTheme } from "../context/AdminThemeContext";
+import { getAdminTheme } from "../theme/adminTheme";
 
 function RegisterPage() {
   const [form, setForm] = useState({
@@ -12,6 +14,8 @@ function RegisterPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
+  const { isDark } = useAdminTheme();
+  const t = getAdminTheme(isDark);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -51,13 +55,13 @@ function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#050b19] via-[#0b1224] to-[#101e39] p-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-[#0f172a] p-8 shadow-2xl">
-        <h2 className="mb-2 text-center text-3xl font-bold text-white">
+    <div className="app-page flex min-h-screen items-center justify-center p-4">
+      <div className="app-surface w-full max-w-md rounded-2xl p-8 shadow-2xl">
+        <h2 className="mb-2 text-center text-3xl font-bold text-[var(--app-text)]">
           Register
         </h2>
 
-        <p className="mb-6 text-center text-sm text-slate-400">
+        <p className="app-text-muted mb-6 text-center text-sm">
           Create your UniConnect account
         </p>
 
@@ -79,7 +83,7 @@ function RegisterPage() {
             name="name"
             placeholder="Full name"
             onChange={handleChange}
-            className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
+            className="app-input w-full rounded-xl px-4 py-3 placeholder-slate-500"
           />
 
           <input
@@ -87,7 +91,7 @@ function RegisterPage() {
             name="email"
             placeholder="Email"
             onChange={handleChange}
-            className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
+            className="app-input w-full rounded-xl px-4 py-3 placeholder-slate-500"
           />
 
           <input
@@ -95,7 +99,7 @@ function RegisterPage() {
             name="password"
             placeholder="Password"
             onChange={handleChange}
-            className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
+            className="app-input w-full rounded-xl px-4 py-3 placeholder-slate-500"
           />
 
           <input
@@ -103,17 +107,17 @@ function RegisterPage() {
             name="confirmPassword"
             placeholder="Confirm password"
             onChange={handleChange}
-            className="w-full rounded-xl border border-slate-700 bg-[#050b19] px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
+            className="app-input w-full rounded-xl px-4 py-3 placeholder-slate-500"
           />
 
-          <button className="w-full rounded-xl bg-teal-500 py-3 font-semibold text-white transition-all duration-200 hover:bg-teal-600">
+          <button className="app-btn-primary w-full rounded-xl py-3 font-semibold transition-all duration-200 hover:brightness-110">
             Register
           </button>
         </form>
 
-        <p className="mt-5 text-center text-sm text-slate-400">
+        <p className="app-text-muted mt-5 text-center text-sm">
           Already have an account?{" "}
-          <Link to="/login" className="font-semibold text-teal-400 hover:text-teal-300">
+          <Link to="/login" className="font-semibold text-[var(--app-primary)] hover:brightness-110">
             Login
           </Link>
         </p>

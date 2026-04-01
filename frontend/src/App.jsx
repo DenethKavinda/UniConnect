@@ -7,28 +7,42 @@ import {
 } from "react-router-dom";
 import Navbar from "./components/NavBar";
 import Dashboard from "./pages/Dashboard";
-import Group from "./pages/Group";
-import CreateGroup from "./pages/CreateGroup";
+import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import UserManagementPage from "./pages/UserManagementPage";
+import Group from "./pages/Group";
+import CreateGroup from "./pages/CreateGroup";
+import Material from "./pages/Material";
+import UploadedMaterials from "./pages/UploadedMaterials";
+import MaterialApproval from "./pages/MaterialApproval";
+import MaterialsDelete from "./pages/MaterialsDelete";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import Posts from "./pages/Posts";
 import PostDetail from "./pages/PostDetail";
 import CreatePost from "./pages/CreatePost";
-import Material from "./pages/Material";
-import UploadedMaterials from "./pages/UploadedMaterials";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
+import { AdminThemeProvider } from "./context/AdminThemeContext";
+import AdminSettingsPage from "./pages/AdminSettingsPage";
+import AdminModulePlaceholderPage from "./pages/AdminModulePlaceholderPage";
+import AdminAnalyticsUserManagement from "./pages/AdminAnalyticsUserManagement";
+import AdminReportsUserManagement from "./pages/AdminReportsUserManagement";
 
 function Layout({ children }) {
   // Show Navbar only on dashboard pages and materials pages
   const location = useLocation();
   const showNavbar =
+    location.pathname === "/" ||
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/materials") ||
     location.pathname.startsWith("/uploaded-materials") ||
-    location.pathname.startsWith("/posts");
+    location.pathname.startsWith("/groups") ||
+    location.pathname.startsWith("/posts") ||
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/adminDashboard") ||
+    location.pathname.startsWith("/userManagement");
 
   return (
     <>
@@ -41,16 +55,38 @@ function Layout({ children }) {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Layout>
-          <Routes>
-            {/* Default route goes to login */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+      <AdminThemeProvider>
+        <Router>
+          <Layout>
+            <Routes>
+            {/* Public home route */}
+            <Route path="/" element={<HomePage />} />
 
             {/* Public routes */}
-            <Route path="/groups" element={<Group />} />
-            <Route path="/groups/:groupId" element={<Group />} />
-            <Route path="/groups/create" element={<CreateGroup />} />
+            <Route
+              path="/groups"
+              element={
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
+                  <Group />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/groups/:groupId"
+              element={
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
+                  <Group />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/groups/create"
+              element={
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
+                  <CreateGroup />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -59,7 +95,7 @@ function App() {
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute allowedRoles={["student"]}>
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
                   <Dashboard />
                 </ProtectedRoute>
               }
@@ -68,7 +104,7 @@ function App() {
             <Route
               path="/materials"
               element={
-                <ProtectedRoute allowedRoles={["student"]}>
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
                   <Material />
                 </ProtectedRoute>
               }
@@ -77,8 +113,26 @@ function App() {
             <Route
               path="/uploaded-materials"
               element={
-                <ProtectedRoute allowedRoles={["student"]}>
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
                   <UploadedMaterials />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/material-approval"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <MaterialApproval />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/materials-delete"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <MaterialsDelete />
                 </ProtectedRoute>
               }
             />
@@ -94,9 +148,66 @@ function App() {
             />
 
             <Route
+              path="/userManagement"
+              element={
+                <ProtectedRoute
+                  allowedRoles={["admin"]}
+                  allowedEmails={["yomal@gmail.com", "admin1uniconnect@gmail.com"]}
+                >
+                  <UserManagementPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/settings"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminSettingsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/analytics/user-management"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminAnalyticsUserManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/analytics/:moduleKey"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminModulePlaceholderPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/reports/user-management"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminReportsUserManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/reports/:moduleKey"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminModulePlaceholderPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/posts"
               element={
-                <ProtectedRoute allowedRoles={["student"]}>
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
                   <Posts />
                 </ProtectedRoute>
               }
@@ -105,7 +216,7 @@ function App() {
             <Route
               path="/posts/create"
               element={
-                <ProtectedRoute allowedRoles={["student"]}>
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
                   <CreatePost />
                 </ProtectedRoute>
               }
@@ -114,17 +225,18 @@ function App() {
             <Route
               path="/posts/:id"
               element={
-                <ProtectedRoute allowedRoles={["student"]}>
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
                   <PostDetail />
                 </ProtectedRoute>
               }
             />
 
             {/* Catch all */}
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
-        </Layout>
-      </Router>
+            <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Layout>
+        </Router>
+      </AdminThemeProvider>
     </AuthProvider>
   );
 }
