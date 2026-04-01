@@ -23,21 +23,19 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Base navigation links (same for all users)
+  const baseNavLinks = [
+    { path: "/", label: "Home" },
+    { path: "/materials", label: "Materials" },
+    { path: "/groups", label: "Groups" },
+    { path: "/posts", label: "Forum" },
+  ];
+
+  // Add Admin Dashboard only for admins
   const navLinks =
     user?.role === "admin"
-      ? [
-          { path: "/", label: "Home" },
-          { path: "/adminDashboard", label: "Dashboard" },
-          { path: "/userManagement", label: "Users" },
-          { path: "/admin/material-approval", label: "Materials" },
-          { path: "/admin/settings", label: "Settings" },
-        ]
-      : [
-          { path: "/", label: "Home" },
-          { path: "/materials", label: "Materials" },
-          { path: "/groups", label: "Groups" },
-          { path: "/posts", label: "Forum" },
-        ];
+      ? [...baseNavLinks, { path: "/adminDashboard", label: "Admin Dashboard" }]
+      : baseNavLinks;
 
   return (
     <nav

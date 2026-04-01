@@ -66,7 +66,7 @@ function App() {
             <Route
               path="/groups"
               element={
-                <ProtectedRoute allowedRoles={["student"]}>
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
                   <Group />
                 </ProtectedRoute>
               }
@@ -74,7 +74,7 @@ function App() {
             <Route
               path="/groups/:groupId"
               element={
-                <ProtectedRoute allowedRoles={["student"]}>
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
                   <Group />
                 </ProtectedRoute>
               }
@@ -82,7 +82,7 @@ function App() {
             <Route
               path="/groups/create"
               element={
-                <ProtectedRoute allowedRoles={["student"]}>
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
                   <CreateGroup />
                 </ProtectedRoute>
               }
@@ -104,7 +104,7 @@ function App() {
             <Route
               path="/materials"
               element={
-                <ProtectedRoute allowedRoles={["student"]}>
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
                   <Material />
                 </ProtectedRoute>
               }
@@ -113,7 +113,7 @@ function App() {
             <Route
               path="/uploaded-materials"
               element={
-                <ProtectedRoute allowedRoles={["student"]}>
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
                   <UploadedMaterials />
                 </ProtectedRoute>
               }
@@ -207,7 +207,7 @@ function App() {
             <Route
               path="/posts"
               element={
-                <ProtectedRoute allowedRoles={["student"]}>
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
                   <Posts />
                 </ProtectedRoute>
               }
@@ -216,7 +216,7 @@ function App() {
             <Route
               path="/posts/create"
               element={
-                <ProtectedRoute allowedRoles={["student"]}>
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
                   <CreatePost />
                 </ProtectedRoute>
               }
@@ -225,7 +225,7 @@ function App() {
             <Route
               path="/posts/:id"
               element={
-                <ProtectedRoute allowedRoles={["student"]}>
+                <ProtectedRoute allowedRoles={["student", "admin"]}>
                   <PostDetail />
                 </ProtectedRoute>
               }
