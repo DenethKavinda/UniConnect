@@ -9,3 +9,6 @@ build/
 .DS_Store
 .vscode/
 .idea/
+
+# Uploaded group shared files (member-only)
+protected_uploads/

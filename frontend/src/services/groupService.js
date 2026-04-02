@@ -15,6 +15,25 @@ const groupService = {
     const response = await API.post(`/groups/${groupId}/join`, {});
     return response.data;
   },
+
+  getGroupFiles: async (groupId) => {
+    const response = await API.get(`/groups/${groupId}/files`);
+    return response.data;
+  },
+
+  uploadGroupFiles: async (groupId, files) => {
+    const data = new FormData();
+    for (const file of files) {
+      data.append('files', file);
+    }
+    const response = await API.post(`/groups/${groupId}/files`, data);
+    return response.data;
+  },
+
+  downloadGroupFile: async (groupId, fileId) => {
+    const response = await API.get(`/groups/${groupId}/files/${fileId}/download`, { responseType: 'blob' });
+    return response;
+  },
 };
 
 export default groupService;
