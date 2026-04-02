@@ -17,6 +17,7 @@
 import axios from "axios";
 
 const configuredBaseUrl = import.meta.env.VITE_API_URL;
+const isDev = import.meta.env.DEV;
 const fallbackBaseUrls = [
   "http://localhost:5000/api",
   "http://localhost:5001/api",
@@ -26,22 +27,40 @@ const fallbackBaseUrls = [
   "http://localhost:5005/api",
 ];
 
+function withApiSuffix(url) {
+  if (!url || typeof url !== "string") return url;
+  const u = url.replace(/\/+$/, "");
+  if (/\/api$/i.test(u)) return u;
+  return `${u}/api`;
+}
+
 const savedBaseUrl = localStorage.getItem("apiBaseUrl");
-const initialBaseUrl = savedBaseUrl || configuredBaseUrl || fallbackBaseUrls[0];
+// In dev without VITE_API_URL, use same-origin /api so Vite proxies to the backend (avoids wrong port / stale localStorage).
+const rawInitial =
+  isDev && !configuredBaseUrl ? "/api" : savedBaseUrl || configuredBaseUrl || fallbackBaseUrls[0];
+const initialBaseUrl = withApiSuffix(rawInitial) || fallbackBaseUrls[0];
 
 const API = axios.create({
   baseURL: initialBaseUrl,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
 });
 
 const baseUrlCandidates = [
   initialBaseUrl,
-  ...(configuredBaseUrl ? [configuredBaseUrl] : []),
+  ...(isDev ? ["/api"] : []),
+  ...(configuredBaseUrl ? [withApiSuffix(configuredBaseUrl)] : []),
   ...fallbackBaseUrls,
-].filter((url, index, array) => url && array.indexOf(url) === index);
+]
+  .filter(Boolean)
+  .filter((url, index, array) => array.indexOf(url) === index);
 
 const setWorkingBaseUrl = (url) => {
-  API.defaults.baseURL = url;
-  localStorage.setItem("apiBaseUrl", url);
+  const normalized = withApiSuffix(url) || url;
+  API.defaults.baseURL = normalized;
+  localStorage.setItem("apiBaseUrl", normalized);
 };
 
 API.interceptors.request.use(
