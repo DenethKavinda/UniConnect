@@ -42,12 +42,22 @@ const modules = [
     gradient: "from-amber-500 to-yellow-500",
     count: "12 My Groups",
   },
+  {
+    title: "Feedback",
+    description:
+      "Rate UniConnect and share suggestions. Help us improve the platform for everyone.",
+    icon: <FiStar />,
+    to: "/dashboard/feedback",
+    gradient: "from-amber-400 to-orange-500",
+    count: "Rate & review",
+  },
 ];
 
 const tips = [
   "Upload materials to help your peers & earn recognition.",
   "Join study groups to stay on track with assignments.",
   "Use the forum to ask questions – the community is here to help!",
+  "Leave a star rating and feedback — it helps us improve UniConnect.",
 ];
 
 const Dashboard = () => {
@@ -115,7 +125,7 @@ const Dashboard = () => {
             </div>
 
             {/* Modules Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
               {modules.map((mod, index) => (
                 <Link
                   key={mod.title}

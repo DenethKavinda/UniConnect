@@ -1,8 +1,31 @@
 import { useEffect, useState } from "react";
+import Swal from "sweetalert2";
 import API from "../services/api";
 import Sidebar from "../components/Sidebar";
 import { useAdminTheme } from "../context/AdminThemeContext";
 import { getAdminTheme } from "../theme/adminTheme";
+
+function escapeHtml(s) {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/"/g, "&quot;");
+}
+
+function swalAdminBase(t) {
+  return {
+    background: t.surfaceMuted,
+    color: t.text,
+    cancelButtonColor: "#64748b",
+    didOpen: () => {
+      const popup = Swal.getPopup();
+      if (popup) {
+        popup.style.border = `1px solid ${t.border}`;
+        popup.style.borderRadius = "12px";
+      }
+    },
+  };
+}
 
 function Avatar({ name, t }) {
   return (
@@ -148,33 +171,101 @@ function UserManagementPage() {
     }
   };
 
-  const handleRoleChange = async (id, role) => {
+  const handleRoleChange = async (id, newRole, userName, previousRole) => {
+    if (newRole === previousRole) return;
+
+    const safeName = escapeHtml(userName);
+    const prevLabel =
+      previousRole === "admin" ? "Admin" : previousRole === "student" ? "Student" : previousRole;
+    const nextLabel =
+      newRole === "admin" ? "Admin" : newRole === "student" ? "Student" : newRole;
+
+    const result = await Swal.fire({
+      ...swalAdminBase(t),
+      icon: "question",
+      title: "Change role?",
+      html: `Change <strong>${safeName}</strong>&rsquo;s role from <strong>${prevLabel}</strong> to <strong>${nextLabel}</strong>?`,
+      showCancelButton: true,
+      confirmButtonText: "Update role",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: t.accent,
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
-      await API.put(`/admin/users/${id}/role`, { role });
+      await API.put(`/admin/users/${id}/role`, { role: newRole });
       fetchUsers();
     } catch (roleError) {
-      alert(roleError.response?.data?.message || "Role update failed");
+      Swal.fire({
+        ...swalAdminBase(t),
+        icon: "error",
+        title: "Role update failed",
+        text: roleError.response?.data?.message || "Could not update role.",
+        confirmButtonColor: t.red,
+      });
     }
   };
 
-  const handleBlockToggle = async (id, isBlocked) => {
+  const handleBlockToggle = async (id, isBlocked, userName) => {
+    const willBlock = !isBlocked;
+
+    const safeName = escapeHtml(userName);
+    const result = await Swal.fire({
+      ...swalAdminBase(t),
+      icon: willBlock ? "warning" : "question",
+      title: willBlock ? "Block this user?" : "Unblock this user?",
+      html: willBlock
+        ? `<strong>${safeName}</strong> will not be able to sign in until you unblock them.`
+        : `<strong>${safeName}</strong> will be able to sign in again.`,
+      showCancelButton: true,
+      confirmButtonText: willBlock ? "Block" : "Unblock",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: willBlock ? "#f59e0a" : t.green,
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
-      await API.put(`/admin/users/${id}/block`, { isBlocked: !isBlocked });
+      await API.put(`/admin/users/${id}/block`, { isBlocked: willBlock });
       fetchUsers();
     } catch (blockError) {
-      alert(blockError.response?.data?.message || "Status update failed");
+      Swal.fire({
+        ...swalAdminBase(t),
+        icon: "error",
+        title: "Status update failed",
+        text: blockError.response?.data?.message || "Could not update status.",
+        confirmButtonColor: t.red,
+      });
     }
   };
 
-  const handleDelete = async (id) => {
-    const ok = window.confirm("Are you sure you want to delete this user?");
-    if (!ok) return;
+  const handleDelete = async (id, userName) => {
+    const safeName = escapeHtml(userName);
+    const result = await Swal.fire({
+      ...swalAdminBase(t),
+      icon: "warning",
+      title: "Delete user?",
+      html: `This will permanently remove <strong>${safeName}</strong> and cannot be undone.`,
+      showCancelButton: true,
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: t.red,
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       await API.delete(`/admin/users/${id}`);
       fetchUsers();
     } catch (deleteError) {
-      alert(deleteError.response?.data?.message || "Delete failed");
+      Swal.fire({
+        ...swalAdminBase(t),
+        icon: "error",
+        title: "Delete failed",
+        text: deleteError.response?.data?.message || "Could not delete user.",
+        confirmButtonColor: t.red,
+      });
     }
   };
 
@@ -466,7 +557,12 @@ function UserManagementPage() {
                           <select
                             value={user.role}
                             onChange={(e) =>
-                              handleRoleChange(user._id, e.target.value)
+                              handleRoleChange(
+                                user._id,
+                                e.target.value,
+                                user.name,
+                                user.role
+                              )
                             }
                             style={{
                               padding: "0.35rem 0.75rem",
@@ -500,7 +596,7 @@ function UserManagementPage() {
                           >
                             <ActionBtn
                               onClick={() =>
-                                handleBlockToggle(user._id, user.isBlocked)
+                                handleBlockToggle(user._id, user.isBlocked, user.name)
                               }
                               color={user.isBlocked ? "green" : "yellow"}
                             >
@@ -508,7 +604,7 @@ function UserManagementPage() {
                             </ActionBtn>
 
                             <ActionBtn
-                              onClick={() => handleDelete(user._id)}
+                              onClick={() => handleDelete(user._id, user.name)}
                               color="red"
                             >
                               Delete

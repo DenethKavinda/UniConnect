@@ -30,6 +30,8 @@ import AdminSettingsPage from "./pages/AdminSettingsPage";
 import AdminModulePlaceholderPage from "./pages/AdminModulePlaceholderPage";
 import AdminAnalyticsUserManagement from "./pages/AdminAnalyticsUserManagement";
 import AdminReportsUserManagement from "./pages/AdminReportsUserManagement";
+import StudentFeedbackPage from "./pages/StudentFeedbackPage";
+import AdminFeedbackPage from "./pages/AdminFeedbackPage";
 
 function Layout({ children }) {
   const location = useLocation();
@@ -44,7 +46,9 @@ function Layout({ children }) {
     location.pathname.startsWith("/posts") ||
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/adminDashboard") ||
-    location.pathname.startsWith("/userManagement");
+    location.pathname.startsWith("/userManagement") ||
+    location.pathname.startsWith("/dashboard/feedback") ||
+    location.pathname.startsWith("/admin/feedback");
 
   return (
     <>
@@ -101,6 +105,14 @@ function App() {
                 }
               />
               <Route
+                path="/dashboard/feedback"
+                element={
+                  <ProtectedRoute allowedRoles={["student", "admin"]}>
+                    <StudentFeedbackPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/materials"
                 element={
                   <ProtectedRoute allowedRoles={["student"]}>
@@ -149,6 +161,7 @@ function App() {
                     allowedEmails={[
                       "yomal@gmail.com",
                       "admin1uniconnect@gmail.com",
+                      "admin1@example.com",
                     ]}
                   >
                     <UserManagementPage />
@@ -160,6 +173,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["admin"]}>
                     <AdminSettingsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/feedback"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <AdminFeedbackPage />
                   </ProtectedRoute>
                 }
               />
@@ -219,7 +240,6 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              Catch all
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Layout>
