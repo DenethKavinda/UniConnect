@@ -804,13 +804,7 @@ const Material = () => {
   };
 
   const selectClass =
-<<<<<<< HEAD
-    "app-input w-full p-3 rounded-lg";
-  const inputClass =
-    "app-input w-full p-3 rounded-lg";
-=======
     "w-full p-3 rounded-lg bg-[#1a1f2e] text-white border border-gray-600 focus:border-blue-500 focus:outline-none";
->>>>>>> member2-materials
   const buttonClass =
     "app-btn-primary hover:brightness-110 transition-colors px-6 py-3 rounded-lg flex items-center gap-2 font-bold";
 
@@ -838,67 +832,26 @@ const Material = () => {
   return (
     <div className="app-page p-10 min-h-screen">
       <div className="flex justify-between items-center mb-8">
-        <Link to="/" className="text-blue-400 hover:text-blue-500 transition-colors">
+        <Link
+          to="/"
+          className="text-blue-400 hover:text-blue-500 transition-colors"
+        >
           <FiHome size={28} />
         </Link>
-<<<<<<< HEAD
-
-        <Link to="/uploaded-materials" className="flex items-center gap-2 text-amber-400 hover:text-amber-500 transition-colors font-medium">
-=======
         <Link
           to="/uploaded-materials"
           className="flex items-center gap-2 text-amber-400 hover:text-amber-500 transition-colors font-medium"
         >
->>>>>>> member2-materials
           <FiEye /> View Uploads
         </Link>
       </div>
 
-      <h2 className="text-3xl md:text-4xl font-bold mb-8 text-[var(--app-text)]">Upload Materials</h2>
+      <h2 className="text-3xl md:text-4xl font-bold mb-8 text-[var(--app-text)]">
+        Upload Materials
+      </h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         <form onSubmit={handleSubmit} className="space-y-5">
-<<<<<<< HEAD
-          <select name="faculty" value={formData.faculty} onChange={handleChange} required className={selectClass}>
-            <option value="">Select Faculty</option>
-            <option>Computing</option>
-            <option>Business</option>
-            <option>Engineering</option>
-            <option>Science</option>
-          </select>
-
-          <select name="year" value={formData.year} onChange={handleChange} required className={selectClass}>
-            <option value="">Academic Year</option>
-            <option>Year 1</option>
-            <option>Year 2</option>
-            <option>Year 3</option>
-            <option>Year 4</option>
-          </select>
-
-          <select name="semester" value={formData.semester} onChange={handleChange} required className={selectClass}>
-            <option value="">Semester</option>
-            <option>Semester 1</option>
-            <option>Semester 2</option>
-          </select>
-
-          <select name="specialization" value={formData.specialization} onChange={handleChange} required className={selectClass}>
-            <option value="">Specialization</option>
-            <option>Software Engineering</option>
-            <option>Data Science</option>
-            <option>Cyber Security</option>
-            <option>Information Systems</option>
-          </select>
-
-          <select name="module" value={formData.module} onChange={handleChange} required className={selectClass}>
-            <option value="">Module</option>
-            <option>Database Systems</option>
-            <option>Web Development</option>
-            <option>Machine Learning</option>
-            <option>Networking</option>
-          </select>
-
-          <input type="file" name="file" onChange={handleChange} required className={inputClass} />
-=======
           {/* Faculty */}
           <select
             name="faculty"
@@ -981,7 +934,6 @@ const Material = () => {
             required
             className={selectClass}
           />
->>>>>>> member2-materials
 
           <button type="submit" className={buttonClass}>
             <FiUpload /> Upload
@@ -989,16 +941,14 @@ const Material = () => {
         </form>
 
         <div className="app-surface p-6 rounded-2xl flex flex-col shadow-lg">
-          <h3 className="text-2xl font-extrabold mb-6 text-amber-400 animate-pulse">💡 Tips for Uploading</h3>
+          <h3 className="text-2xl font-extrabold mb-6 text-amber-400 animate-pulse">
+            💡 Tips for Uploading
+          </h3>
           <ul className="space-y-4 w-full">
             {[
               "Select correct Faculty, Specialization, Year, Semester, and Module.",
               "Ensure the document is properly named.",
-<<<<<<< HEAD
-              "Allowed formats: PDF, DOCX, PPTX, TXT, ZIP, and other common document types.",
-=======
               "Allowed formats: PDF, DOCX, PPTX, TXT, ZIP, and other common types.",
->>>>>>> member2-materials
               "After upload, you can view it in Uploaded Materials.",
             ].map((tip, idx) => (
               <li
@@ -1008,7 +958,9 @@ const Material = () => {
                 <span className="app-btn-primary flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full font-bold animate-pulse">
                   {idx + 1}
                 </span>
-                <p className="text-white font-medium text-sm group-hover:text-amber-300 transition-colors">{tip}</p>
+                <p className="text-white font-medium text-sm group-hover:text-amber-300 transition-colors">
+                  {tip}
+                </p>
               </li>
             ))}
           </ul>

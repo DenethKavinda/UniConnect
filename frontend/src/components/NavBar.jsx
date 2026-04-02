@@ -8,7 +8,8 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const dashboardPath = user?.role === "admin" ? "/adminDashboard" : "/dashboard";
+  const dashboardPath =
+    user?.role === "admin" ? "/adminDashboard" : "/dashboard";
 
   const handleLogout = () => {
     logout();
@@ -41,10 +42,11 @@ const Navbar = () => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 h-[70px] z-[1000] transition-all duration-300 ${scrolled
+      className={`fixed top-0 left-0 right-0 h-[70px] z-[1000] transition-all duration-300 ${
+        scrolled
           ? "app-page backdrop-blur-xl border-b border-white/10 shadow-2xl"
           : "bg-transparent"
-        }`}
+      }`}
     >
       <div className="max-w-7xl mx-auto h-full flex items-center justify-between px-6">
         {/* Brand Logo */}
@@ -64,9 +66,10 @@ const Navbar = () => {
               key={link.path}
               to={link.path}
               className={({ isActive }) =>
-                `px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive
-                  ? "text-amber-400 bg-amber-400/10 border border-amber-400/20"
-                  : "text-gray-400 hover:text-white hover:bg-white/5"
+                `px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  isActive
+                    ? "text-amber-400 bg-amber-400/10 border border-amber-400/20"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
                 }`
               }
             >
@@ -76,7 +79,6 @@ const Navbar = () => {
 
           <div className="h-5 w-[1px] bg-white/10 mx-3" />
 
-<<<<<<< HEAD
           {!user ? (
             <div className="flex items-center gap-2">
               <Link
@@ -96,7 +98,9 @@ const Navbar = () => {
             <div className="flex items-center gap-2">
               <div className="app-surface-soft px-3 py-1.5 rounded-xl text-xs text-[var(--app-text)]">
                 <span className="font-bold">{user.name || "User"}</span>
-                <span className="ml-2 app-text-muted uppercase">{user.role}</span>
+                <span className="ml-2 app-text-muted uppercase">
+                  {user.role}
+                </span>
               </div>
               <Link
                 to={dashboardPath}
@@ -112,15 +116,6 @@ const Navbar = () => {
               </button>
             </div>
           )}
-=======
-          {/* Login Button */}
-          <Link
-            to="/login"
-            className="bg-amber-500 text-[#0a0d17] px-6 py-2.5 rounded-full text-sm font-bold hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20 hover:-translate-y-0.5"
-          >
-            LogOut
-          </Link>
->>>>>>> member2-materials
         </div>
 
         {/* Mobile Toggle */}
@@ -133,19 +128,21 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         <div
-          className={`fixed inset-x-0 top-[70px] app-page border-b border-white/10 p-6 flex flex-col gap-4 md:hidden transition-all duration-300 ${mobileOpen
+          className={`fixed inset-x-0 top-[70px] app-page border-b border-white/10 p-6 flex flex-col gap-4 md:hidden transition-all duration-300 ${
+            mobileOpen
               ? "translate-y-0 opacity-100"
               : "-translate-y-10 opacity-0 pointer-events-none"
-            }`}
+          }`}
         >
           {navLinks.map((link) => (
             <NavLink
               key={link.path}
               to={link.path}
               className={({ isActive }) =>
-                `font-semibold py-2 px-2 rounded transition-colors border-b border-white/5 ${isActive
-                  ? "text-amber-400"
-                  : "text-gray-300 hover:text-amber-400"
+                `font-semibold py-2 px-2 rounded transition-colors border-b border-white/5 ${
+                  isActive
+                    ? "text-amber-400"
+                    : "text-gray-300 hover:text-amber-400"
                 }`
               }
               onClick={() => setMobileOpen(false)}
@@ -175,7 +172,9 @@ const Navbar = () => {
             <>
               <div className="app-surface-soft p-3 rounded-xl text-sm text-center">
                 <span className="font-bold">{user.name || "User"}</span>
-                <span className="ml-2 app-text-muted uppercase">{user.role}</span>
+                <span className="ml-2 app-text-muted uppercase">
+                  {user.role}
+                </span>
               </div>
               <Link
                 to={dashboardPath}

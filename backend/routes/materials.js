@@ -30,10 +30,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       specialization,
       module,
       fileUrl: req.file.filename,
-<<<<<<< HEAD
-=======
       // status = "pending" by default
->>>>>>> member2-materials
     });
 
     await newMaterial.save();
@@ -44,10 +41,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-=======
 // ---------------- GET ONLY APPROVED ----------------
->>>>>>> member2-materials
 router.get("/", async (req, res) => {
   try {
     const materials = await Material.find({ status: "approved" }).sort({
@@ -59,10 +53,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-=======
 // ---------------- GET ALL (ADMIN) ----------------
->>>>>>> member2-materials
 router.get("/all", async (req, res) => {
   try {
     const materials = await Material.find({}).sort({
@@ -74,10 +65,7 @@ router.get("/all", async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-=======
 // ---------------- GET PENDING (ADMIN) ----------------
->>>>>>> member2-materials
 router.get("/pending", async (req, res) => {
   try {
     const materials = await Material.find({ status: "pending" }).sort({
@@ -89,10 +77,7 @@ router.get("/pending", async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-=======
 // ---------------- APPROVE ----------------
->>>>>>> member2-materials
 router.put("/approve/:id", async (req, res) => {
   try {
     const material = await Material.findByIdAndUpdate(
@@ -107,10 +92,7 @@ router.put("/approve/:id", async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-=======
 // ---------------- REJECT ----------------
->>>>>>> member2-materials
 router.put("/reject/:id", async (req, res) => {
   try {
     const material = await Material.findByIdAndUpdate(
@@ -125,10 +107,7 @@ router.put("/reject/:id", async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-=======
 // ---------------- DELETE MATERIAL ----------------
->>>>>>> member2-materials
 router.delete("/:id", async (req, res) => {
   try {
     const material = await Material.findById(req.params.id);
@@ -136,19 +115,13 @@ router.delete("/:id", async (req, res) => {
       return res.status(404).json({ msg: "Material not found" });
     }
 
-<<<<<<< HEAD
-=======
     // Delete the file from uploads folder
->>>>>>> member2-materials
     const filePath = path.join(__dirname, "../uploads", material.fileUrl);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
 
-<<<<<<< HEAD
-=======
     // Delete from database
->>>>>>> member2-materials
     await Material.findByIdAndDelete(req.params.id);
 
     res.json({ message: "Material deleted successfully" });
@@ -158,10 +131,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-=======
 // ---------------- FILE VIEW ----------------
->>>>>>> member2-materials
 router.get("/file/:filename", (req, res) => {
   const filePath = path.join(__dirname, "../uploads", req.params.filename);
 

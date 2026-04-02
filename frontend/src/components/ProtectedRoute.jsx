@@ -22,21 +22,13 @@ function ProtectedRoute({ children, allowedRoles = [], allowedEmails = [] }) {
     allowedEmails.length === 0 || allowedEmails.includes(user.email);
 
   // if any provided condition fails => deny
-<<<<<<< HEAD
-  if (!roleAllowed || !emailAllowed ) {
+  if (!roleAllowed || !emailAllowed) {
     if (user.role === "admin") {
       return <Navigate to="/adminDashboard" replace />;
     }
 
     if (user.role === "student") {
       return <Navigate to="/dashboard" replace />;
-=======
-  if (!roleAllowed || !emailAllowed) {
-    if (!roleAllowed) {
-      if (user.role === "admin")
-        return <Navigate to="/adminDashboard" replace />;
-      if (user.role === "student") return <Navigate to="/dashboard" replace />;
->>>>>>> member2-materials
     }
 
     return <Navigate to="/login" replace />;

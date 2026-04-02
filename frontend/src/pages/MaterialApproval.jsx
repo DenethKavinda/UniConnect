@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
-<<<<<<< HEAD
-=======
 import { FiExternalLink, FiDownload } from "react-icons/fi";
->>>>>>> member2-materials
 
 const MaterialApproval = () => {
   const [materials, setMaterials] = useState([]);
@@ -29,50 +26,13 @@ const MaterialApproval = () => {
     fetchPending();
   };
 
-<<<<<<< HEAD
-  const remove = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this material?")) {
-      return;
-    }
-    await API.delete(`/materials/${id}`);
-    fetchPending();
-  };
-
-  return (
-    <div className="app-page p-10 min-h-screen">
-      <h2 className="text-3xl font-bold mb-6 text-[var(--app-text)]">Material Approval</h2>
-
-      <button onClick={() => navigate("/materials-delete")} className="app-surface-soft mb-6 px-4 py-2 rounded">
-        Go to Delete Page
-      </button>
-
-      {materials.map((m) => (
-        <div key={m._id} className="app-surface p-5 rounded mb-4">
-          <h3 className="text-amber-400">{m.module}</h3>
-
-          <div className="flex gap-3 mt-3">
-            <button onClick={() => approve(m._id)} className="bg-green-500 px-4 py-2 rounded">
-              Approve
-            </button>
-
-            <button onClick={() => reject(m._id)} className="bg-red-500 px-4 py-2 rounded">
-              Reject
-            </button>
-
-            <button onClick={() => remove(m._id)} className="bg-red-700 px-4 py-2 rounded">
-              Delete
-            </button>
-          </div>
-        </div>
-      ))}
-=======
   return (
     <div className="p-10 text-white bg-[#0a0d17] min-h-screen">
       <h2 className="text-3xl font-bold mb-6">Material Approval</h2>
 
       {/* NAV BUTTON */}
       <button
-        onClick={() => navigate("/materials-delete")}
+        onClick={() => navigate("/admin/materials-delete")}
         className="mb-6 bg-blue-600 px-4 py-2 rounded"
       >
         Go to Delete Page
@@ -131,7 +91,6 @@ const MaterialApproval = () => {
           </div>
         ))
       )}
->>>>>>> member2-materials
     </div>
   );
 };

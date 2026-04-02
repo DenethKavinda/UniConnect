@@ -1,16 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-<<<<<<< HEAD
-import { FiArrowLeft, FiDownload, FiExternalLink, FiTrash2 } from "react-icons/fi";
-=======
 import {
   FiArrowLeft,
   FiDownload,
   FiExternalLink,
   FiTrash2,
 } from "react-icons/fi";
->>>>>>> member2-materials
 
 const UploadedMaterials = () => {
   const [materials, setMaterials] = useState([]);
@@ -35,24 +31,6 @@ const UploadedMaterials = () => {
     }
   };
 
-<<<<<<< HEAD
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this document?")) return;
-    try {
-      await axios.delete(`http://localhost:5000/api/materials/${id}`);
-      fetchMaterials();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleFilter = (e) => {
-    setFilters({ ...filters, [e.target.name]: e.target.value });
-  };
-
-  const filtered = materials.filter((m) =>
-    Object.keys(filters).every((key) => (filters[key] ? m[key] === filters[key] : true)),
-=======
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     const updatedFilters = { ...filters, [name]: value };
@@ -117,7 +95,6 @@ const UploadedMaterials = () => {
     Object.keys(filters).every((key) =>
       filters[key] ? m[key] === filters[key] : true,
     ),
->>>>>>> member2-materials
   );
 
   const handleDelete = async (id) => {
@@ -131,36 +108,18 @@ const UploadedMaterials = () => {
   };
 
   return (
-<<<<<<< HEAD
-    <div className="app-page p-10 min-h-screen">
-      <div className="flex items-center justify-between mb-8">
-        <Link to="/materials" className="flex items-center gap-2 text-amber-400">
-=======
     <div className="p-10 bg-[#0a0d17] min-h-screen text-white">
       <div className="flex items-center justify-between mb-8">
         <Link
           to="/materials"
           className="flex items-center gap-2 text-amber-400"
         >
->>>>>>> member2-materials
           <FiArrowLeft size={24} /> Back
         </Link>
         <h2 className="text-3xl font-bold">Uploaded Materials</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-<<<<<<< HEAD
-        {["faculty", "year", "semester", "specialization", "module"].map((field) => (
-          <select
-            key={field}
-            name={field}
-            onChange={handleFilter}
-            className="app-input rounded p-2"
-          >
-            <option value="">{field}</option>
-          </select>
-        ))}
-=======
         <select
           name="faculty"
           value={filters.faculty}
@@ -230,20 +189,14 @@ const UploadedMaterials = () => {
             </option>
           ))}
         </select>
->>>>>>> member2-materials
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-<<<<<<< HEAD
-        {filtered.map((m) => (
-          <div key={m._id} className="app-surface p-6 rounded-2xl flex flex-col gap-4">
-=======
         {filteredMaterials.map((m) => (
           <div
             key={m._id}
             className="bg-[#1a1d2a] p-6 rounded-2xl border flex flex-col gap-4"
           >
->>>>>>> member2-materials
             <h3 className="text-xl text-amber-400">{m.module}</h3>
             <p className="text-sm text-gray-300">
               {m.faculty} | {m.year} | {m.semester} | {m.specialization}
@@ -254,11 +207,7 @@ const UploadedMaterials = () => {
                 href={`http://localhost:5000/api/materials/file/${m.fileUrl}`}
                 target="_blank"
                 rel="noreferrer"
-<<<<<<< HEAD
-                className="app-btn-primary px-3 py-2 rounded flex items-center gap-2"
-=======
                 className="bg-amber-500 px-3 py-2 rounded flex items-center gap-2"
->>>>>>> member2-materials
               >
                 <FiExternalLink /> View
               </a>
@@ -266,23 +215,15 @@ const UploadedMaterials = () => {
               <a
                 href={`http://localhost:5000/api/materials/file/${m.fileUrl}`}
                 download
-<<<<<<< HEAD
-                className="app-surface-soft px-3 py-2 rounded flex items-center gap-2"
-=======
                 className="bg-blue-500 px-3 py-2 rounded flex items-center gap-2"
->>>>>>> member2-materials
               >
                 <FiDownload /> Download
               </a>
 
-<<<<<<< HEAD
-              <button onClick={() => handleDelete(m._id)} className="bg-red-600 px-3 py-2 rounded flex items-center gap-2">
-=======
               <button
                 onClick={() => handleDelete(m._id)}
                 className="bg-red-600 px-3 py-2 rounded flex items-center gap-2"
               >
->>>>>>> member2-materials
                 <FiTrash2 /> Delete
               </button>
             </div>
