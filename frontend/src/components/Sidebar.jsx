@@ -350,6 +350,27 @@ const menu = [
     ],
   },
   {
+    name: "Feedback & ratings",
+    path: "/admin/feedback",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path
+          d="M3 3h10v8H6l-3 2.5V3Z"
+          stroke="currentColor"
+          strokeWidth="1.3"
+          strokeLinejoin="round"
+          fill="none"
+        />
+        <path
+          d="M5.5 6h5M5.5 8.5h3"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
+  },
+  {
     name: "Settings",
     path: "/admin/settings",
     icon: (
@@ -599,28 +620,41 @@ function Sidebar() {
     navigate("/", { replace: true });
   };
 
+  const NAVBAR_HEIGHT = 70;
+
   return (
     <div
       style={{
         width: 228,
-        height: "100vh",
-        background: isDark
-          ? "linear-gradient(180deg, #050d1f 0%, #07142a 55%, #061022 100%)"
-          : "linear-gradient(180deg, #ffffff 0%, #f8fafc 55%, #f1f5f9 100%)",
-        borderRight: isDark
-          ? "1px solid rgba(148,163,184,0.14)"
-          : `1px solid ${t.border}`,
-        display: "flex",
-        flexDirection: "column",
-        padding: "24px 12px 16px",
         flexShrink: 0,
-        fontFamily: "'Inter', sans-serif",
-        boxShadow: isDark
-          ? "inset -1px 0 0 rgba(15,23,42,0.9), 6px 0 20px rgba(2,6,23,0.35)"
-          : "inset -1px 0 0 rgba(226,232,240,0.9), 4px 0 14px rgba(15,23,42,0.06)",
-        overflow: "hidden",
+        alignSelf: "stretch",
       }}
     >
+      <aside
+        style={{
+          position: "fixed",
+          top: NAVBAR_HEIGHT,
+          left: 0,
+          width: 228,
+          height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
+          zIndex: 30,
+          background: isDark
+            ? "linear-gradient(180deg, #050d1f 0%, #07142a 55%, #061022 100%)"
+            : "linear-gradient(180deg, #ffffff 0%, #f8fafc 55%, #f1f5f9 100%)",
+          borderRight: isDark
+            ? "1px solid rgba(148,163,184,0.14)"
+            : `1px solid ${t.border}`,
+          display: "flex",
+          flexDirection: "column",
+          padding: "24px 12px 16px",
+          fontFamily: "'Inter', sans-serif",
+          boxSizing: "border-box",
+          boxShadow: isDark
+            ? "inset -1px 0 0 rgba(15,23,42,0.9), 6px 0 20px rgba(2,6,23,0.35)"
+            : "inset -1px 0 0 rgba(226,232,240,0.9), 4px 0 14px rgba(15,23,42,0.06)",
+          overflow: "hidden",
+        }}
+      >
       <div style={{ padding: "4px 8px 26px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
           <div
@@ -834,6 +868,7 @@ function Sidebar() {
         </svg>
         Logout
       </button>
+      </aside>
     </div>
   );
 }

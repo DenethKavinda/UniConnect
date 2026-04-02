@@ -30,14 +30,17 @@ const Navbar = () => {
           { path: "/", label: "Home" },
           { path: "/adminDashboard", label: "Dashboard" },
           { path: "/userManagement", label: "Users" },
+          { path: "/admin/feedback", label: "Feedback" },
           { path: "/admin/material-approval", label: "Materials" },
           { path: "/admin/settings", label: "Settings" },
         ]
       : [
           { path: "/", label: "Home" },
+          { path: "/dashboard", label: "Dashboard" },
           { path: "/materials", label: "Materials" },
           { path: "/groups", label: "Groups" },
           { path: "/posts", label: "Forum" },
+          { path: "/dashboard/feedback", label: "Feedback" },
         ];
 
   return (
