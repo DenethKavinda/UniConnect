@@ -1,11 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-function ProtectedRoute({
-  children,
-  allowedRoles = [],
-  allowedEmails = [],
-}) {
+function ProtectedRoute({ children, allowedRoles = [], allowedEmails = [] }) {
   const { user, token } = useAuth();
 
   if (!token || !user) {
@@ -26,6 +22,7 @@ function ProtectedRoute({
     allowedEmails.length === 0 || allowedEmails.includes(user.email);
 
   // if any provided condition fails => deny
+<<<<<<< HEAD
   if (!roleAllowed || !emailAllowed ) {
     if (user.role === "admin") {
       return <Navigate to="/adminDashboard" replace />;
@@ -33,6 +30,13 @@ function ProtectedRoute({
 
     if (user.role === "student") {
       return <Navigate to="/dashboard" replace />;
+=======
+  if (!roleAllowed || !emailAllowed) {
+    if (!roleAllowed) {
+      if (user.role === "admin")
+        return <Navigate to="/adminDashboard" replace />;
+      if (user.role === "student") return <Navigate to="/dashboard" replace />;
+>>>>>>> member2-materials
     }
 
     return <Navigate to="/login" replace />;

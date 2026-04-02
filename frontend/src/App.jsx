@@ -5,6 +5,7 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
+
 import Navbar from "./components/NavBar";
 import Dashboard from "./pages/Dashboard";
 import HomePage from "./pages/HomePage";
@@ -16,12 +17,17 @@ import Group from "./pages/Group";
 import CreateGroup from "./pages/CreateGroup";
 import Material from "./pages/Material";
 import UploadedMaterials from "./pages/UploadedMaterials";
+<<<<<<< HEAD
 import MaterialApproval from "./pages/MaterialApproval";
 import MaterialsDelete from "./pages/MaterialsDelete";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import Posts from "./pages/Posts";
 import PostDetail from "./pages/PostDetail";
 import CreatePost from "./pages/CreatePost";
+=======
+import MaterialApproval from "./pages/MaterialApproval"; // ✅ NEW
+import MaterialsDelete from "./pages/MaterialsDelete";
+>>>>>>> member2-materials
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { AdminThemeProvider } from "./context/AdminThemeContext";
@@ -31,11 +37,13 @@ import AdminAnalyticsUserManagement from "./pages/AdminAnalyticsUserManagement";
 import AdminReportsUserManagement from "./pages/AdminReportsUserManagement";
 
 function Layout({ children }) {
-  // Show Navbar only on dashboard pages and materials pages
   const location = useLocation();
+
+  // ✅ UPDATED: include admin pages also
   const showNavbar =
     location.pathname === "/" ||
     location.pathname.startsWith("/dashboard") ||
+<<<<<<< HEAD
     location.pathname.startsWith("/materials") ||
     location.pathname.startsWith("/uploaded-materials") ||
     location.pathname.startsWith("/groups") ||
@@ -43,6 +51,13 @@ function Layout({ children }) {
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/adminDashboard") ||
     location.pathname.startsWith("/userManagement");
+=======
+    (location.pathname.startsWith("/materials") &&
+      !location.pathname.startsWith("/materials-delete")) ||
+    location.pathname.startsWith("/uploaded-materials");
+  // location.pathname.startsWith("/adminDashboard") ||
+  // location.pathname.startsWith("/material-approval"); // ✅ NEW
+>>>>>>> member2-materials
 
   return (
     <>
@@ -55,12 +70,20 @@ function Layout({ children }) {
 function App() {
   return (
     <AuthProvider>
+<<<<<<< HEAD
       <AdminThemeProvider>
         <Router>
           <Layout>
             <Routes>
             {/* Public home route */}
             <Route path="/" element={<HomePage />} />
+=======
+      <Router>
+        <Layout>
+          <Routes>
+            {/* Default route */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
+>>>>>>> member2-materials
 
             {/* Public routes */}
             <Route
@@ -91,7 +114,7 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
 
-            {/* Protected student routes */}
+            {/* ---------------- STUDENT ---------------- */}
             <Route
               path="/dashboard"
               element={
@@ -119,6 +142,7 @@ function App() {
               }
             />
 
+<<<<<<< HEAD
             <Route
               path="/admin/material-approval"
               element={
@@ -130,14 +154,22 @@ function App() {
 
             <Route
               path="/admin/materials-delete"
+=======
+            {/* ---------------- ADMIN ---------------- */}
+            <Route
+              path="/materials-delete"
+>>>>>>> member2-materials
               element={
                 <ProtectedRoute allowedRoles={["admin"]}>
                   <MaterialsDelete />
                 </ProtectedRoute>
               }
             />
+<<<<<<< HEAD
 
             {/* Protected admin routes */}
+=======
+>>>>>>> member2-materials
             <Route
               path="/adminDashboard"
               element={
@@ -147,6 +179,7 @@ function App() {
               }
             />
 
+<<<<<<< HEAD
             <Route
               path="/userManagement"
               element={
@@ -227,6 +260,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={["student"]}>
                   <PostDetail />
+=======
+            {/* ✅ NEW: Material Approval Page */}
+            <Route
+              path="/material-approval"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <MaterialApproval />
+>>>>>>> member2-materials
                 </ProtectedRoute>
               }
             />

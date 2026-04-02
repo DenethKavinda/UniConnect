@@ -43,6 +43,7 @@ app.use("/api/posts", postRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/materials", materialRoutes);
 app.use("/api/groups", groupRoutes);
+// app.use("/api/materials", require("./routes/materials"));
 
 // 404 handler
 app.use((req, res) => {

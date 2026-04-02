@@ -1,8 +1,14 @@
+<<<<<<< HEAD
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useAdminTheme } from "../context/AdminThemeContext";
 import { getAdminTheme } from "../theme/adminTheme";
+=======
+// Sidebar.jsx
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+>>>>>>> member2-materials
 
 const menu = [
   {
@@ -10,10 +16,42 @@ const menu = [
     path: "/adminDashboard",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-        <rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-        <rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-        <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
+        <rect
+          x="1"
+          y="1"
+          width="6"
+          height="6"
+          rx="1.5"
+          fill="currentColor"
+          opacity="0.9"
+        />
+        <rect
+          x="9"
+          y="1"
+          width="6"
+          height="6"
+          rx="1.5"
+          fill="currentColor"
+          opacity="0.9"
+        />
+        <rect
+          x="1"
+          y="9"
+          width="6"
+          height="6"
+          rx="1.5"
+          fill="currentColor"
+          opacity="0.9"
+        />
+        <rect
+          x="9"
+          y="9"
+          width="6"
+          height="6"
+          rx="1.5"
+          fill="currentColor"
+          opacity="0.9"
+        />
       </svg>
     ),
   },
@@ -22,59 +60,107 @@ const menu = [
     path: "/admin/users",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <circle cx="6" cy="5" r="2.5" fill="currentColor" opacity="0.9"/>
-        <path d="M1 13c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.9"/>
-        <path d="M11 7c1.1 0 2 .9 2 2v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.7"/>
-        <circle cx="12" cy="4.5" r="1.8" fill="currentColor" opacity="0.7"/>
+        <circle cx="6" cy="5" r="2.5" fill="currentColor" opacity="0.9" />
+        <path
+          d="M1 13c0-2.76 2.24-5 5-5s5 2.24 5 5"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          fill="none"
+          opacity="0.9"
+        />
+        <path
+          d="M11 7c1.1 0 2 .9 2 2v1"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          fill="none"
+          opacity="0.7"
+        />
+        <circle cx="12" cy="4.5" r="1.8" fill="currentColor" opacity="0.7" />
       </svg>
     ),
     children: [
       {
-        name: "User & Account Management ",
+        name: "User & Account Management",
         path: "/userManagement",
         icon: (
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <circle cx="5" cy="4" r="2" fill="currentColor"/>
-            <path d="M1 11c0-2.21 1.79-4 4-4s4 1.79 4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" fill="none"/>
-            <path d="M9.5 6.5h3M11 5v3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity="0.7"/>
+            <circle cx="5" cy="4" r="2" fill="currentColor" />
+            <path
+              d="M1 11c0-2.21 1.79-4 4-4s4 1.79 4 4"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              fill="none"
+            />
+            <path
+              d="M9.5 6.5h3M11 5v3"
+              stroke="currentColor"
+              strokeWidth="1.3"
+              strokeLinecap="round"
+              opacity="0.7"
+            />
           </svg>
         ),
-      }
+      },
     ],
   },
   {
-    name: "Study Material & Content ",
-    path: "",
+    name: "Study Material & Content",
+    path: "/material-approval", // <-- updated path
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M2 3.5C2 2.67 2.67 2 3.5 2H13v11H3.5C2.67 13 2 12.33 2 11.5V3.5Z" 
-            stroke="currentColor" strokeWidth="1.4" fill="none"/>
-      <path d="M5 2V13" stroke="currentColor" strokeWidth="1.2" opacity="0.6"/>
-    </svg>
+        <path
+          d="M2 3.5C2 2.67 2.67 2 3.5 2H13v11H3.5C2.67 13 2 12.33 2 11.5V3.5Z"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          fill="none"
+        />
+        <path
+          d="M5 2V13"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          opacity="0.6"
+        />
+      </svg>
     ),
   },
   {
     name: "Discussion & Communication",
-    path: "",
+    path: "/discussion",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M3 3h10v7H6l-3 3V3Z" 
-            stroke="currentColor" strokeWidth="1.4" fill="none"/>
-    </svg>
+        <path
+          d="M3 3h10v7H6l-3 3V3Z"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          fill="none"
+        />
+      </svg>
     ),
   },
   {
     name: "Study Group & System Administration",
-    path: "",
+    path: "/groups",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="5" cy="6" r="2" fill="currentColor"/>
-      <circle cx="11" cy="6" r="2" fill="currentColor" opacity="0.7"/>
-      <path d="M2 13c0-2 2-3.5 3-3.5s3 1.5 3 3.5" 
-            stroke="currentColor" strokeWidth="1.3" fill="none"/>
-      <path d="M8 13c0-1.5 1.5-3 3-3s3 1.5 3 3" 
-            stroke="currentColor" strokeWidth="1.3" fill="none" opacity="0.7"/>
-    </svg>
+        <circle cx="5" cy="6" r="2" fill="currentColor" />
+        <circle cx="11" cy="6" r="2" fill="currentColor" opacity="0.7" />
+        <path
+          d="M2 13c0-2 2-3.5 3-3.5s3 1.5 3 3.5"
+          stroke="currentColor"
+          strokeWidth="1.3"
+          fill="none"
+        />
+        <path
+          d="M8 13c0-1.5 1.5-3 3-3s3 1.5 3 3"
+          stroke="currentColor"
+          strokeWidth="1.3"
+          fill="none"
+          opacity="0.7"
+        />
+      </svg>
     ),
   },
   {
@@ -137,28 +223,40 @@ function Chevron({ open }) {
       viewBox="0 0 12 12"
       fill="none"
       style={{
-        transition: "transform 0.22s cubic-bezier(.4,0,.2,1)",
+        transition: "transform 0.22s",
         transform: open ? "rotate(90deg)" : "rotate(0deg)",
-        flexShrink: 0,
       }}
     >
-      <path d="M4 2.5l4 3.5-4 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      <path
+        d="M4 2.5l4 3.5-4 3.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 function NavItem({ item, isOpen, onToggle }) {
   const location = useLocation();
+<<<<<<< HEAD
   const { isDark } = useAdminTheme();
   const t = getAdminTheme(isDark);
   const hasChildren = Boolean(item.children?.length);
   const isActive = !hasChildren && location.pathname === item.path;
   const isChildActive = hasChildren && item.children.some((c) => location.pathname === c.path);
+=======
+  const hasChildren = item.children?.length > 0;
+  const isActive = location.pathname === item.path;
+  const isChildActive =
+    hasChildren && item.children.some((c) => location.pathname === c.path);
+>>>>>>> member2-materials
 
-  const base = {
-    width: "100%",
+  const baseStyle = {
     display: "flex",
     alignItems: "center",
+<<<<<<< HEAD
     gap: "10px",
     padding: "10px 11px",
     borderRadius: "11px",
@@ -193,62 +291,85 @@ function NavItem({ item, isOpen, onToggle }) {
       e.currentTarget.style.color = isDark ? "#7b8ba3" : "#475569";
       e.currentTarget.style.transform = "translateY(0)";
     }
+=======
+    gap: 10,
+    padding: "9px 10px",
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: 600,
+    textDecoration: "none",
+    cursor: "pointer",
+    color: isActive || isChildActive ? "#eab308" : "#94a3b8",
+    background:
+      isActive || isChildActive ? "rgba(234,179,8,0.1)" : "transparent",
+    position: "relative",
+>>>>>>> member2-materials
   };
 
   const activePill = (
     <span
       style={{
         position: "absolute",
-        left: "3px",
+        left: 3,
         top: "50%",
         transform: "translateY(-50%)",
         width: 3,
         height: 16,
         borderRadius: 2,
+<<<<<<< HEAD
         background: t.accent,
+=======
+        background: "#eab308",
+>>>>>>> member2-materials
       }}
     />
   );
 
   if (hasChildren) {
     return (
+<<<<<<< HEAD
       <div style={{ marginBottom: isOpen ? "10px" : "0px" }}>
         <button onClick={onToggle} style={base} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
+=======
+      <div>
+        <button onClick={onToggle} style={baseStyle}>
+>>>>>>> member2-materials
           {isChildActive && activePill}
-          <span style={{ color: "inherit", display: "flex", alignItems: "center" }}>{item.icon}</span>
-          <span style={{ flex: 1 }}>{item.name}</span>
-          <span style={{ color: "#475569" }}>
-            <Chevron open={isOpen} />
+          <span style={{ display: "flex", alignItems: "center" }}>
+            {item.icon}
           </span>
+          <span style={{ flex: 1 }}>{item.name}</span>
+          <Chevron open={isOpen} />
         </button>
-
         <div
           style={{
+            maxHeight: isOpen ? `${item.children.length * 42}px` : "0",
             overflow: "hidden",
+<<<<<<< HEAD
             maxHeight: isOpen ? `${item.children.length * 88}px` : "0px",
             transition: "max-height 0.22s cubic-bezier(.4,0,.2,1)",
+=======
+            transition: "max-height 0.22s",
+>>>>>>> member2-materials
           }}
         >
           <div
             style={{
-              marginLeft: "14px",
-              paddingLeft: "12px",
+              marginLeft: 14,
               borderLeft: "1px solid rgba(255,255,255,0.06)",
-              paddingTop: "2px",
-              paddingBottom: "4px",
               display: "flex",
               flexDirection: "column",
-              gap: "1px",
             }}
           >
             {item.children.map((child) => {
-              const childActive = location.pathname === child.path;
+              const active = location.pathname === child.path;
               return (
                 <Link
                   key={child.path}
                   to={child.path}
                   style={{
                     display: "flex",
+<<<<<<< HEAD
                     alignItems: "flex-start",
                     gap: "8px",
                     padding: "9px 10px",
@@ -273,9 +394,21 @@ function NavItem({ item, isOpen, onToggle }) {
                       e.currentTarget.style.background = "transparent";
                       e.currentTarget.style.color = "#475569";
                     }
+=======
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "7px 10px",
+                    borderRadius: 6,
+                    fontWeight: active ? 600 : 400,
+                    color: active ? "#3b82f6" : "#64748b",
+                    background: active
+                      ? "rgba(59,130,246,0.08)"
+                      : "transparent",
+                    textDecoration: "none",
+>>>>>>> member2-materials
                   }}
                 >
-                  <span style={{ color: "inherit", display: "flex", alignItems: "center", flexShrink: 0 }}>{child.icon}</span>
+                  <span style={{ display: "flex" }}>{child.icon}</span>
                   {child.name}
                 </Link>
               );
@@ -287,50 +420,62 @@ function NavItem({ item, isOpen, onToggle }) {
   }
 
   return (
-    <Link to={item.path} style={base} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
+    <Link to={item.path} style={baseStyle}>
       {isActive && activePill}
-      <span style={{ color: "inherit", display: "flex", alignItems: "center" }}>{item.icon}</span>
+      <span style={{ display: "flex", alignItems: "center" }}>{item.icon}</span>
       {item.name}
     </Link>
   );
 }
 
-function Sidebar() {
+export default function Sidebar() {
   const location = useLocation();
+<<<<<<< HEAD
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const { isDark } = useAdminTheme();
   const t = getAdminTheme(isDark);
 
+=======
+>>>>>>> member2-materials
   const [openMenus, setOpenMenus] = useState(() => {
     const init = {};
     menu.forEach((item) => {
-      if (item.children?.some((c) => location.pathname === c.path)) {
-        init[item.path] = true;
-      }
+      if (item.children?.some((c) => location.pathname === c.path))
+        init[item.path || item.name] = true;
     });
     return init;
   });
 
+<<<<<<< HEAD
   const toggle = (path) => setOpenMenus((prev) => ({ ...prev, [path]: !prev[path] }));
   const handleLogout = () => {
     logout();
     navigate("/", { replace: true });
   };
+=======
+  const toggle = (path) =>
+    setOpenMenus((prev) => ({ ...prev, [path]: !prev[path] }));
+>>>>>>> member2-materials
 
   return (
     <div
       style={{
+<<<<<<< HEAD
         width: 228,
         height: "100vh",
         background: isDark
           ? "linear-gradient(180deg, #050d1f 0%, #07142a 55%, #061022 100%)"
           : "linear-gradient(180deg, #ffffff 0%, #f8fafc 55%, #f1f5f9 100%)",
         borderRight: isDark ? "1px solid rgba(148,163,184,0.14)" : `1px solid ${t.border}`,
+=======
+        width: 240,
+        minHeight: "100vh",
+        background: "#060d1f",
+        padding: "24px 12px",
+>>>>>>> member2-materials
         display: "flex",
         flexDirection: "column",
-        padding: "24px 12px 16px",
-        flexShrink: 0,
         fontFamily: "'Inter', sans-serif",
         boxShadow: isDark
           ? "inset -1px 0 0 rgba(15,23,42,0.9), 6px 0 20px rgba(2,6,23,0.35)"
@@ -338,6 +483,7 @@ function Sidebar() {
         overflow: "hidden",
       }}
     >
+<<<<<<< HEAD
       <div style={{ padding: "4px 8px 26px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
           <div
@@ -402,15 +548,22 @@ function Sidebar() {
           paddingRight: "2px",
         }}
       >
+=======
+      <div style={{ marginBottom: 28 }}>
+        <h2 style={{ color: "#f1f5f9" }}>UniConnect Admin</h2>
+      </div>
+      <nav style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+>>>>>>> member2-materials
         {menu.map((item) => (
           <NavItem
-            key={item.path}
+            key={item.path || item.name}
             item={item}
-            isOpen={!!openMenus[item.path]}
-            onToggle={() => toggle(item.path)}
+            isOpen={!!openMenus[item.path || item.name]}
+            onToggle={() => toggle(item.path || item.name)}
           />
         ))}
       </nav>
+<<<<<<< HEAD
 
       <div
         style={{
@@ -521,3 +674,8 @@ function Sidebar() {
 }
 
 export default Sidebar;
+=======
+    </div>
+  );
+}
+>>>>>>> member2-materials
