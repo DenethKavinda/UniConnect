@@ -141,10 +141,59 @@ const downloadGroupFile = async (req, res, next) => {
   }
 };
 
+const deleteGroupFile = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    const groupId = req.params?.groupId;
+    const fileId = req.params?.fileId;
+
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!groupId || !mongoose.Types.ObjectId.isValid(groupId)) {
+      return res.status(400).json({ message: 'Invalid group id.' });
+    }
+
+    if (!fileId || !mongoose.Types.ObjectId.isValid(fileId)) {
+      return res.status(400).json({ message: 'Invalid file id.' });
+    }
+
+    await requireGroupMember({ groupId, userId });
+
+    const fileDoc = await GroupFile.findOne({ _id: fileId, groupId }).lean();
+    if (!fileDoc) {
+      return res.status(404).json({ message: 'File not found.' });
+    }
+
+    if (String(fileDoc.uploadedBy) !== String(userId)) {
+      return res.status(403).json({ message: 'Only the uploader can delete this file.' });
+    }
+
+    ensureUploadDir();
+    const filePath = path.join(PROTECTED_UPLOAD_ROOT, fileDoc.storedName);
+
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch {
+      // ignore file-system errors so we can still delete the DB record
+    }
+
+    await GroupFile.deleteOne({ _id: fileId, groupId });
+
+    res.json({ message: 'File deleted.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   listGroupFiles,
   uploadGroupFiles,
   downloadGroupFile,
+  deleteGroupFile,
   PROTECTED_UPLOAD_ROOT,
   ensureUploadDir,
 };

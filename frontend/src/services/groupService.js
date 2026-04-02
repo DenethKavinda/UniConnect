@@ -34,6 +34,11 @@ const groupService = {
     const response = await API.get(`/groups/${groupId}/files/${fileId}/download`, { responseType: 'blob' });
     return response;
   },
+
+  deleteGroupFile: async (groupId, fileId) => {
+    const response = await API.delete(`/groups/${groupId}/files/${fileId}`);
+    return response.data;
+  },
 };
 
 export default groupService;

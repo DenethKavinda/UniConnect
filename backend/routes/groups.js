@@ -7,6 +7,7 @@ const {
 	listGroupFiles,
 	uploadGroupFiles,
 	downloadGroupFile,
+	deleteGroupFile,
 	ensureUploadDir,
 	PROTECTED_UPLOAD_ROOT,
 } = require('../controllers/groupFileController');
@@ -44,5 +45,6 @@ router.post('/:groupId/join', isLoggedIn, joinGroup);
 router.get('/:groupId/files', isLoggedIn, listGroupFiles);
 router.post('/:groupId/files', isLoggedIn, upload.array('files', 5), uploadGroupFiles);
 router.get('/:groupId/files/:fileId/download', isLoggedIn, downloadGroupFile);
+router.delete('/:groupId/files/:fileId', isLoggedIn, deleteGroupFile);
 
 module.exports = router;

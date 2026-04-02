@@ -24,6 +24,11 @@ const fallbackBaseUrls = [
   "http://localhost:5003/api",
   "http://localhost:5004/api",
   "http://localhost:5005/api",
+  "http://localhost:5006/api",
+  "http://localhost:5007/api",
+  "http://localhost:5008/api",
+  "http://localhost:5009/api",
+  "http://localhost:5010/api",
 ];
 
 const savedBaseUrl = localStorage.getItem("apiBaseUrl");
@@ -60,8 +65,13 @@ API.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Retry only network-level failures, not auth or validation errors.
-    if (!originalRequest || error.response || originalRequest.__retryOnAltBase) {
+    const status = error?.response?.status;
+    const serverMessage = error?.response?.data?.message;
+    const isRouteNotFoundOnWrongServer =
+      status === 404 && typeof serverMessage === "string" && serverMessage.startsWith("Route not found:");
+
+    // Retry only network-level failures OR the backend global 404 handler (usually wrong port).
+    if (!originalRequest || (!isRouteNotFoundOnWrongServer && error.response) || originalRequest.__retryOnAltBase) {
       return Promise.reject(error);
     }
 
@@ -82,6 +92,16 @@ API.interceptors.response.use(
         return await API.request(originalRequest);
       } catch (retryError) {
         if (retryError.response) {
+          const retryStatus = retryError?.response?.status;
+          const retryMessage = retryError?.response?.data?.message;
+          const retryIsRouteNotFound =
+            retryStatus === 404 && typeof retryMessage === "string" && retryMessage.startsWith("Route not found:");
+
+          // If we're specifically hunting for the correct backend port, keep trying.
+          if (isRouteNotFoundOnWrongServer && retryIsRouteNotFound) {
+            continue;
+          }
+
           return Promise.reject(retryError);
         }
       }

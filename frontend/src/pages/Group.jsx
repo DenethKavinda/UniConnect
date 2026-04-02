@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import groupService from '../services/groupService';
+import { useAuth } from '../context/AuthContext';
 import { io } from 'socket.io-client';
 import {
   FiMessageSquare, FiCheckSquare, FiCalendar,
@@ -31,6 +32,19 @@ const mapGroup = (raw, index) => ({
 const Group = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
+  const auth = useAuth();
+
+  const storedUser = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const currentUserId = auth?.user?._id || auth?.user?.id || storedUser?._id || storedUser?.id || '';
+  const currentUserEmail = auth?.user?.email || storedUser?.email || '';
 
   const [groups, setGroups] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -534,6 +548,21 @@ const Group = () => {
     }
   };
 
+  const handleDeleteGroupFile = async (fileDoc) => {
+    setFileError('');
+    try {
+      await groupService.deleteGroupFile(groupId, fileDoc._id);
+      setGroupFiles((prev) => prev.filter((f) => String(f?._id) !== String(fileDoc._id)));
+    } catch (error) {
+      const status = error?.response?.status;
+      const apiMessage = error?.response?.data?.message || error?.response?.data?.error || error?.message;
+      const message = apiMessage
+        ? `${apiMessage}${status ? ` (HTTP ${status})` : ''}`
+        : 'Unable to delete this file right now.';
+      setFileError(message);
+    }
+  };
+
   if (groupId) {
     if (isLoading) {
       return (
@@ -713,13 +742,27 @@ const Group = () => {
                               </p>
                             </div>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleDownloadGroupFile(fileDoc)}
-                            className="flex-shrink-0 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-slate-200"
-                          >
-                            Download
-                          </button>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadGroupFile(fileDoc)}
+                              className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-slate-200"
+                            >
+                              Download
+                            </button>
+                            {(
+                              String(fileDoc?.uploadedBy || '') === String(currentUserId || '') ||
+                              (currentUserEmail && String(fileDoc?.uploadedByLabel || '') === String(currentUserEmail))
+                            ) ? (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteGroupFile(fileDoc)}
+                                className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/15 transition-colors text-red-200"
+                              >
+                                Delete
+                              </button>
+                            ) : null}
+                          </div>
                         </div>
                       ))}
                     </div>
