@@ -6,6 +6,19 @@ import { useAdminTheme } from "../context/AdminThemeContext";
 import { getAdminTheme } from "../theme/adminTheme";
 import Swal from "sweetalert2";
 
+function validateLoginEmail(email) {
+  const em = String(email ?? "").trim();
+  if (!em) return { ok: false, message: "Please enter your email." };
+  if (!em.includes("@")) {
+    return { ok: false, message: "Email must include the @ symbol." };
+  }
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRe.test(em)) {
+    return { ok: false, message: "Please enter a valid email address (e.g. name@domain.com)." };
+  }
+  return { ok: true, email: em };
+}
+
 function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
@@ -24,7 +37,7 @@ function LoginPage() {
     e.preventDefault();
     setError("");
 
-    if (!form.email || !form.password) {
+    if (!form.email?.trim() || !form.password) {
       Swal.fire({
         icon: "warning",
         title: "Missing Fields",
@@ -36,10 +49,26 @@ function LoginPage() {
       return;
     }
 
+    const emailCheck = validateLoginEmail(form.email);
+    if (!emailCheck.ok) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Email",
+        text: emailCheck.message,
+        confirmButtonColor: t.accent,
+        background: t.surfaceSoft || t.surfaceMuted,
+        color: t.text,
+      });
+      return;
+    }
+
     try {
       setLoading(true);
 
-      const res = await API.post("/auth/login", form);
+      const res = await API.post("/auth/login", {
+        email: emailCheck.email,
+        password: form.password,
+      });
 
       const token = res.data.token;
       const user = res.data.user;
@@ -136,7 +165,7 @@ function LoginPage() {
         </form>
 
         <p className="app-text-muted mt-5 text-center text-sm">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link
             to="/register"
             className="font-semibold text-[var(--app-primary)] hover:brightness-110"
