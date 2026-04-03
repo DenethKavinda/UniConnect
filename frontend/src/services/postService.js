@@ -13,18 +13,12 @@ const postService = {
   },
   
   createPost: async (postData) => {
-    // Check if postData is FormData (contains file) or plain object
-    const isFormData = postData instanceof FormData;
-    const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined;
-    const response = await api.post('/posts', postData, config);
+    const response = await api.post('/posts', postData);
     return response.data;
   },
   
   updatePost: async (postId, postData) => {
-    // Check if postData is FormData (contains file) or plain object
-    const isFormData = postData instanceof FormData;
-    const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined;
-    const response = await api.put(`/posts/${postId}`, postData, config);
+    const response = await api.put(`/posts/${postId}`, postData);
     return response.data;
   },
   

@@ -14,7 +14,6 @@ const Discussions = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('All');
-  const [selectedTag, setSelectedTag] = useState('');
   const [sortBy, setSortBy] = useState('hot');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -26,7 +25,6 @@ const Discussions = () => {
       setError('');
       const params = {
         subject: selectedSubject === 'All' ? undefined : selectedSubject,
-        tag: selectedTag || undefined,
         sort: sortBy,
         page,
         limit: 10
@@ -44,31 +42,13 @@ const Discussions = () => {
 
   useEffect(() => {
     loadPosts();
-  }, [selectedSubject, selectedTag, sortBy, page]);
-
-  const popularTags = useMemo(() => {
-    const freq = posts.reduce((acc, post) => {
-      (post.tags || []).forEach((tag) => {
-        if (!tag) return;
-        const normalized = tag.toLowerCase();
-        acc[normalized] = (acc[normalized] || 0) + 1;
-      });
-      return acc;
-    }, {});
-
-    return Object.entries(freq)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([tag]) => tag);
-  }, [posts]);
+  }, [selectedSubject, sortBy, page]);
 
   const filteredPosts = useMemo(() => {
     if (!searchQuery) return posts;
-    const normalizedQuery = searchQuery.toLowerCase();
     return posts.filter(post =>
-      post.title?.toLowerCase().includes(normalizedQuery) ||
-      post.content?.toLowerCase().includes(normalizedQuery) ||
-      (post.tags || []).some((tag) => tag?.toLowerCase().includes(normalizedQuery))
+      post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.content?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [posts, searchQuery]);
 
@@ -170,12 +150,6 @@ const Discussions = () => {
     navigate(`/posts/${postId}`);
   };
 
-  const handleTagClick = (tag) => {
-    setSelectedTag(tag);
-    setSearchQuery('');
-    setPage(1);
-  };
-
   return (
     <>
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -263,17 +237,6 @@ const Discussions = () => {
                   </button>
                 ))}
               </div>
-              {selectedTag && (
-                <button
-                  onClick={() => {
-                    setSelectedTag('');
-                    setPage(1);
-                  }}
-                  className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-blue-400/10 border border-blue-400/30 text-blue-300"
-                >
-                  Tag: #{selectedTag} ✕
-                </button>
-              )}
               <input
                 type="text"
                 placeholder="Search posts..."
@@ -304,7 +267,6 @@ const Discussions = () => {
                   currentUserId={currentUserId}
                   onVote={handleVote}
                   onClick={handlePostClick}
-                  onTagClick={handleTagClick}
                 />
               ))}
             </div>
@@ -353,23 +315,14 @@ const Discussions = () => {
             <div className="bg-white/[0.06] border border-white/10 backdrop-blur-xl rounded-2xl p-4">
               <h3 className="text-sm font-semibold text-slate-200 mb-3">Popular Tags</h3>
               <div className="flex flex-wrap gap-2">
-                {popularTags.length === 0 ? (
-                  <span className="text-xs text-slate-500">No tags yet</span>
-                ) : (
-                  popularTags.map(tag => (
-                  <button
+                {['help', 'assignment', 'exam', 'project', 'question'].map(tag => (
+                  <span
                     key={tag}
-                    onClick={() => handleTagClick(tag)}
-                    className={`text-xs px-2 py-1 rounded-full border transition-colors ${
-                      selectedTag === tag
-                        ? 'bg-blue-500/35 border-blue-300/60 text-blue-100'
-                        : 'bg-blue-500/20 border-blue-400/30 text-blue-300 hover:bg-blue-500/30'
-                    }`}
+                    className="bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs px-2 py-1 rounded-full cursor-pointer hover:bg-blue-500/30"
                   >
                     #{tag}
-                  </button>
-                ))
-                )}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
