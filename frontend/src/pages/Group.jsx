@@ -80,10 +80,16 @@ const Group = () => {
   const [newReminder, setNewReminder] = useState('');
   const [newMessage, setNewMessage] = useState('');
 
+  const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
+
   const [isFeedLoading, setIsFeedLoading] = useState(false);
   const [feedError, setFeedError] = useState('');
   const feedSignatureRef = useRef('');
   const fetchFeedRef = useRef(null);
+
+  const [isWorkspaceSyncing, setIsWorkspaceSyncing] = useState(false);
+  const [workspaceSyncError, setWorkspaceSyncError] = useState('');
+  const workspaceSignatureRef = useRef('');
 
   const [joinState, setJoinState] = useState({ isJoining: false, error: '', notice: '', groupId: '' });
   const [taskError, setTaskError] = useState('');
@@ -131,6 +137,75 @@ const Group = () => {
   const isTaskEnabled = Boolean(activeModules.taskTracker);
   const isChatEnabled = Boolean(activeModules.discussionForum);
   const isSharedMaterialsEnabled = Boolean(activeModules.sharedMaterials);
+
+  useEffect(() => {
+    if (!groupId) return;
+    if (!hasLoadedGroups) return;
+    if (!activeGroup?.isJoined) return;
+
+    let cancelled = false;
+    let intervalId = null;
+
+    const buildSignature = (payload) => {
+      const tasks = Array.isArray(payload?.tasks) ? payload.tasks : [];
+      const reminders = Array.isArray(payload?.reminders) ? payload.reminders : [];
+      const tasksSig = tasks.map((t) => `${String(t?._id || '')}:${String(t?.updatedAt || t?.createdAt || '')}:${t?.completed ? '1' : '0'}`).join('|');
+      const remSig = reminders.map((r) => `${String(r?._id || '')}:${String(r?.updatedAt || r?.createdAt || '')}`).join('|');
+      return `${tasksSig}__${remSig}`;
+    };
+
+    const fetchWorkspace = async () => {
+      if (cancelled) return;
+      setIsWorkspaceSyncing(true);
+      setWorkspaceSyncError('');
+      try {
+        const payload = await groupService.getWorkspace(groupId);
+        const signature = buildSignature(payload);
+
+        if (workspaceSignatureRef.current !== signature) {
+          workspaceSignatureRef.current = signature;
+
+          const serverTasks = Array.isArray(payload?.tasks) ? payload.tasks : [];
+          const serverReminders = Array.isArray(payload?.reminders) ? payload.reminders : [];
+
+          setTasks(
+            serverTasks.map((t) => ({
+              id: String(t?._id || ''),
+              title: String(t?.title || ''),
+              priority: t?.priority || 'medium',
+              date: String(t?.date || ''),
+              completed: Boolean(t?.completed),
+            }))
+          );
+
+          setReminders(
+            serverReminders.map((r) => ({
+              id: String(r?._id || ''),
+              text: String(r?.text || ''),
+              type: 'info',
+            }))
+          );
+        }
+      } catch (error) {
+        const status = error?.response?.status;
+        const apiMessage = error?.response?.data?.message || error?.response?.data?.error || error?.message;
+        const message = apiMessage
+          ? `${apiMessage}${status ? ` (HTTP ${status})` : ''}`
+          : 'Unable to sync workspace right now.';
+        setWorkspaceSyncError(message);
+      } finally {
+        if (!cancelled) setIsWorkspaceSyncing(false);
+      }
+    };
+
+    fetchWorkspace();
+    intervalId = window.setInterval(fetchWorkspace, 20000);
+
+    return () => {
+      cancelled = true;
+      if (intervalId) window.clearInterval(intervalId);
+    };
+  }, [activeGroup?.isJoined, groupId, hasLoadedGroups]);
 
   useEffect(() => {
     if (!groupId) return;
@@ -463,7 +538,26 @@ const Group = () => {
   };
 
   const toggleTaskComplete = (taskId) => {
-    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, completed: !t.completed } : t)));
+    const existing = tasks.find((t) => String(t.id) === String(taskId));
+    if (!existing || !groupId) return;
+
+    const nextCompleted = !Boolean(existing.completed);
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, completed: nextCompleted } : t)));
+
+    groupService
+      .updateTask(groupId, taskId, { completed: nextCompleted })
+      .then((result) => {
+        const updated = result?.task;
+        if (updated?._id) {
+          setTasks((prev) =>
+            prev.map((t) => (String(t.id) === String(updated._id) ? { ...t, completed: Boolean(updated.completed) } : t))
+          );
+        }
+      })
+      .catch(() => {
+        // Revert optimistic update on failure.
+        setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, completed: Boolean(existing.completed) } : t)));
+      });
   };
 
   const filteredGroups = useMemo(() => {
@@ -517,11 +611,38 @@ const Group = () => {
       return;
     }
 
-    setTasks((prev) => [
-      ...prev,
-      { ...newTask, title, id: Date.now(), completed: false },
-    ]);
-    setNewTask({ title: '', priority: 'medium', date: '' });
+    if (!groupId) {
+      setTaskError('Missing group id.');
+      return;
+    }
+
+    groupService
+      .createTask(groupId, { title, priority: newTask.priority, date: newTask.date })
+      .then((result) => {
+        const created = result?.task;
+        if (created?._id) {
+          setTasks((prev) => [
+            ...prev,
+            {
+              id: String(created._id),
+              title: String(created.title || title),
+              priority: created.priority || newTask.priority,
+              date: String(created.date || newTask.date),
+              completed: Boolean(created.completed),
+            },
+          ]);
+          setNewTask({ title: '', priority: 'medium', date: '' });
+          setIsAddTaskOpen(false);
+        }
+      })
+      .catch((error) => {
+        const status = error?.response?.status;
+        const apiMessage = error?.response?.data?.message || error?.response?.data?.error || error?.message;
+        const message = apiMessage
+          ? `${apiMessage}${status ? ` (HTTP ${status})` : ''}`
+          : 'Unable to save this task right now.';
+        setTaskError(message);
+      });
   };
 
   const handleAddReminder = (e) => {
@@ -538,8 +659,30 @@ const Group = () => {
       return;
     }
 
-    setReminders((prev) => [{ id: Date.now(), text: reminderText }, ...prev]);
-    setNewReminder('');
+    if (!groupId) {
+      setReminderError('Missing group id.');
+      return;
+    }
+
+    groupService
+      .createReminder(groupId, { text: reminderText })
+      .then((result) => {
+        const created = result?.reminder;
+        if (created?._id) {
+          setReminders((prev) => [{ id: String(created._id), text: String(created.text || reminderText) }, ...prev]);
+        } else {
+          setReminders((prev) => [{ id: Date.now(), text: reminderText }, ...prev]);
+        }
+        setNewReminder('');
+      })
+      .catch((error) => {
+        const status = error?.response?.status;
+        const apiMessage = error?.response?.data?.message || error?.response?.data?.error || error?.message;
+        const message = apiMessage
+          ? `${apiMessage}${status ? ` (HTTP ${status})` : ''}`
+          : 'Unable to save this reminder right now.';
+        setReminderError(message);
+      });
   };
 
   const handleSendMessage = (e) => {
@@ -840,8 +983,8 @@ const Group = () => {
           </div>
         </header>
 
-        <div className="max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-12 h-[calc(100vh-70px)] pt-20">
-          <main className="lg:col-span-8 border-r border-white/5 p-8 overflow-y-auto">
+        <div className="max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-12 min-h-[calc(100vh-70px)] pt-20">
+          <main className="lg:col-span-8 border-r border-white/5 p-8 pb-24">
             <div className="flex gap-4 mb-8">
               {isTaskEnabled ? (
                 <button onClick={() => setActiveTab('tasks')} className={`px-6 py-2 rounded-xl font-bold transition-all ${activeTab === 'tasks' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-white/5 text-slate-400'}`}>Tasks & Deadlines</button>
@@ -853,145 +996,227 @@ const Group = () => {
 
             {activeTab === 'tasks' && isTaskEnabled ? (
               <div className="space-y-6">
-                <form onSubmit={handleAddTask} className="bg-white/5 p-6 rounded-3xl border border-white/10 flex flex-wrap gap-4 items-end backdrop-blur-sm">
-                  <div className="flex-1 min-w-[200px]">
-                    <label className="text-[10px] uppercase font-black text-slate-500 block mb-2 tracking-widest">New Task</label>
-                    <input
-                      value={newTask.title}
-                      onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                      className="app-input w-full rounded-xl px-4 py-2.5 text-sm"
-                      placeholder="Assign a task..."
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] uppercase font-black text-slate-500 block mb-2 tracking-widest">Priority</label>
-                    <select value={newTask.priority} onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })} className="app-input rounded-xl px-4 py-2.5 text-sm cursor-pointer">
-                      <option value="high">High</option>
-                      <option value="medium">Medium</option>
-                      <option value="low">Low</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] uppercase font-black text-slate-500 block mb-2 tracking-widest">Due Date</label>
-                    <input
-                      type="date"
-                      value={newTask.date}
-                      onChange={(e) => setNewTask({ ...newTask, date: e.target.value })}
-                      className="app-input rounded-xl px-4 py-2.5 text-sm"
-                    />
-                  </div>
-                  <button type="submit" className="bg-blue-600 p-3.5 rounded-xl hover:bg-blue-500 transition-all text-white shadow-lg shadow-blue-600/20">
-                    <FiPlus />
-                  </button>
-                </form>
-
-                {taskError ? (
+                {workspaceSyncError ? (
                   <div className="bg-red-500/10 border border-red-500/30 text-red-200 text-sm px-4 py-3 rounded-2xl">
-                    {taskError}
+                    {workspaceSyncError}
                   </div>
+                ) : isWorkspaceSyncing ? (
+                  <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Syncing workspace...</div>
                 ) : null}
 
-                {isSharedMaterialsEnabled ? (
-                <div className="bg-white/5 rounded-3xl border border-white/10 p-6 space-y-3 backdrop-blur-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="text-xs font-black uppercase text-slate-500 tracking-[0.2em] flex items-center gap-2"><FiPaperclip /> Shared Files</h3>
-                    {isFilesUploading ? (
-                      <span className="text-[10px] font-black uppercase tracking-widest text-blue-200">Uploading...</span>
-                    ) : null}
-                  </div>
-
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFilesSelected}
-                    disabled={isFilesUploading}
-                    className="w-full text-xs text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-500/30 file:px-3 file:py-1.5 file:text-blue-100"
-                  />
-
-                  {fileError ? (
-                    <p className="text-xs text-red-200">{fileError}</p>
-                  ) : null}
-
-                  {isFilesLoading ? (
-                    <p className="text-[10px] text-slate-500 font-bold italic">Loading shared files...</p>
-                  ) : groupFiles.length === 0 ? (
-                    <p className="text-[10px] text-slate-500 font-bold italic">No files shared yet.</p>
-                  ) : (
-                    <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                      {groupFiles.map((fileDoc) => (
-                        <div key={fileDoc._id} className="flex items-center justify-between gap-3 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
-                          <div className="flex items-center gap-3 min-w-0">
-                            {String(fileDoc?.mimeType || '').startsWith('image/') ? (
-                              <button
-                                type="button"
-                                onClick={() => handleDownloadGroupFile(fileDoc)}
-                                className="w-14 h-14 rounded-xl overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0"
-                                title="Click to download"
-                              >
-                                {imagePreviewUrls[fileDoc._id] ? (
-                                  <img
-                                    src={imagePreviewUrls[fileDoc._id]}
-                                    alt={fileDoc.originalName || 'Shared image'}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">IMG</span>
-                                )}
-                              </button>
-                            ) : (
-                              <div className="w-14 h-14 rounded-xl overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 text-slate-500">
-                                <FiPaperclip />
-                              </div>
-                            )}
-
-                            <div className="min-w-0">
-                              <p className="text-xs text-slate-200 truncate max-w-[420px]">{fileDoc.originalName}</p>
-                              <p className="text-[10px] text-slate-500 font-bold">
-                                {formatFileSize(fileDoc.size)}{fileDoc.uploadedByLabel ? ` • ${fileDoc.uploadedByLabel}` : ''}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => handleDownloadGroupFile(fileDoc)}
-                              className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-slate-200"
-                            >
-                              Download
-                            </button>
-                            {(
-                              String(fileDoc?.uploadedBy || '') === String(currentUserId || '') ||
-                              (currentUserEmail && String(fileDoc?.uploadedByLabel || '') === String(currentUserEmail))
-                            ) ? (
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteGroupFile(fileDoc)}
-                                className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/15 transition-colors text-red-200"
-                              >
-                                Delete
-                              </button>
-                            ) : null}
-                          </div>
-                        </div>
-                      ))}
+                <div className="space-y-6">
+                  <div className="bg-white/5 p-6 rounded-3xl border border-white/10 backdrop-blur-sm">
+                    <div className="flex items-center justify-between gap-3 mb-4">
+                      <div className="min-w-0">
+                        <h3 className="text-xs font-black uppercase text-slate-500 tracking-[0.2em]">Tasks & Deadlines</h3>
+                        <p className="text-[11px] text-slate-500 font-bold">Your task list updates for all squad members.</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-xl bg-white/5 border border-white/10 text-slate-300">
+                          {tasks.length}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTaskError('');
+                            setIsAddTaskOpen(true);
+                          }}
+                          className="text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-xl bg-blue-600/20 border border-blue-500/30 hover:bg-blue-600/30 transition-colors text-blue-100 flex items-center gap-2"
+                        >
+                          <FiPlus />
+                          Add Task
+                        </button>
+                      </div>
                     </div>
-                  )}
-                </div>
-                ) : null}
 
-                <div className="space-y-3">
-                  {tasks.length === 0 && <p className="text-center text-slate-500 py-10 italic border border-dashed border-white/5 rounded-3xl">No tasks assigned yet.</p>}
-                  {tasks.map((task) => (
-                    <TaskCard
-                      key={task.id}
-                      title={task.title}
-                      priority={task.priority}
-                      date={task.date || 'No Deadline'}
-                      completed={Boolean(task.completed)}
-                      onToggle={() => toggleTaskComplete(task.id)}
-                    />
-                  ))}
+                    {tasks.length === 0 ? (
+                      <p className="text-center text-slate-500 py-10 italic border border-dashed border-white/5 rounded-3xl">
+                        No tasks yet. Click “Add Task” to create one.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {tasks.map((task) => (
+                          <TaskCard
+                            key={task.id}
+                            title={task.title}
+                            priority={task.priority}
+                            date={task.date || 'No Deadline'}
+                            completed={Boolean(task.completed)}
+                            onToggle={() => toggleTaskComplete(task.id)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {isSharedMaterialsEnabled ? (
+                    <div className="bg-white/5 rounded-3xl border border-white/10 p-6 space-y-3 backdrop-blur-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className="text-xs font-black uppercase text-slate-500 tracking-[0.2em] flex items-center gap-2"><FiPaperclip /> Shared Files</h3>
+                        {isFilesUploading ? (
+                          <span className="text-[10px] font-black uppercase tracking-widest text-blue-200">Uploading...</span>
+                        ) : null}
+                      </div>
+
+                      <input
+                        type="file"
+                        multiple
+                        onChange={handleFilesSelected}
+                        disabled={isFilesUploading}
+                        className="w-full text-xs text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-500/30 file:px-3 file:py-1.5 file:text-blue-100"
+                      />
+
+                      {fileError ? (
+                        <p className="text-xs text-red-200">{fileError}</p>
+                      ) : null}
+
+                      {isFilesLoading ? (
+                        <p className="text-[10px] text-slate-500 font-bold italic">Loading shared files...</p>
+                      ) : groupFiles.length === 0 ? (
+                        <p className="text-[10px] text-slate-500 font-bold italic">No files shared yet.</p>
+                      ) : (
+                        <div className="space-y-2 pr-1">
+                          {groupFiles.map((fileDoc) => (
+                            <div key={fileDoc._id} className="flex items-center justify-between gap-3 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
+                              <div className="flex items-center gap-3 min-w-0">
+                                {String(fileDoc?.mimeType || '').startsWith('image/') ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownloadGroupFile(fileDoc)}
+                                    className="w-14 h-14 rounded-xl overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0"
+                                    title="Click to download"
+                                  >
+                                    {imagePreviewUrls[fileDoc._id] ? (
+                                      <img
+                                        src={imagePreviewUrls[fileDoc._id]}
+                                        alt={fileDoc.originalName || 'Shared image'}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">IMG</span>
+                                    )}
+                                  </button>
+                                ) : (
+                                  <div className="w-14 h-14 rounded-xl overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 text-slate-500">
+                                    <FiPaperclip />
+                                  </div>
+                                )}
+
+                                <div className="min-w-0">
+                                  <p className="text-xs text-slate-200 truncate max-w-[420px]">{fileDoc.originalName}</p>
+                                  <p className="text-[10px] text-slate-500 font-bold">
+                                    {formatFileSize(fileDoc.size)}{fileDoc.uploadedByLabel ? ` • ${fileDoc.uploadedByLabel}` : ''}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadGroupFile(fileDoc)}
+                                  className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-slate-200"
+                                >
+                                  Download
+                                </button>
+                                {(
+                                  String(fileDoc?.uploadedBy || '') === String(currentUserId || '') ||
+                                  (currentUserEmail && String(fileDoc?.uploadedByLabel || '') === String(currentUserEmail))
+                                ) ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteGroupFile(fileDoc)}
+                                    className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/15 transition-colors text-red-200"
+                                  >
+                                    Delete
+                                  </button>
+                                ) : null}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTaskError('');
+                    setIsAddTaskOpen(true);
+                  }}
+                  className="fixed bottom-6 right-6 z-[70] bg-blue-600 text-white h-14 w-14 rounded-2xl shadow-xl shadow-blue-600/30 hover:bg-blue-500 transition-colors flex items-center justify-center"
+                  aria-label="Add task"
+                >
+                  <FiPlus className="text-xl" />
+                </button>
+
+                {isAddTaskOpen ? (
+                  <div className="fixed top-[140px] right-0 z-[60] h-[calc(100vh-140px)] w-full sm:w-[420px] bg-white/5 border-l border-white/10 backdrop-blur-md p-6 overflow-y-auto">
+                    <div className="flex items-start justify-between gap-4 mb-6">
+                      <div className="min-w-0">
+                        <h3 className="text-lg font-black text-white tracking-tight">Add Task</h3>
+                        <p className="text-xs text-slate-500 font-bold">Tasks sync for everyone in the squad.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddTaskOpen(false)}
+                        className="text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-slate-200"
+                      >
+                        Close
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleAddTask} className="space-y-4">
+                      <div>
+                        <label className="text-[10px] uppercase font-black text-slate-500 block mb-2 tracking-widest">Task</label>
+                        <input
+                          value={newTask.title}
+                          onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                          className="app-input w-full rounded-xl px-4 py-3 text-sm"
+                          placeholder="e.g. Finish assignment draft"
+                          autoFocus
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[10px] uppercase font-black text-slate-500 block mb-2 tracking-widest">Priority</label>
+                          <select
+                            value={newTask.priority}
+                            onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                            className="app-input w-full rounded-xl px-4 py-3 text-sm cursor-pointer"
+                          >
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] uppercase font-black text-slate-500 block mb-2 tracking-widest">Due Date</label>
+                          <input
+                            type="date"
+                            value={newTask.date}
+                            onChange={(e) => setNewTask({ ...newTask, date: e.target.value })}
+                            className="app-input w-full rounded-xl px-4 py-3 text-sm"
+                          />
+                        </div>
+                      </div>
+
+                      {taskError ? (
+                        <div className="bg-red-500/10 border border-red-500/30 text-red-200 text-sm px-4 py-3 rounded-2xl">
+                          {taskError}
+                        </div>
+                      ) : null}
+
+                      <button
+                        type="submit"
+                        className="w-full bg-blue-600 px-6 py-3 rounded-xl font-black hover:bg-blue-500 transition-colors"
+                      >
+                        Add Task
+                      </button>
+                    </form>
+                  </div>
+                ) : null}
               </div>
             ) : activeTab === 'chat' && isChatEnabled ? (
               <div className="flex flex-col h-[70vh]">
@@ -1005,6 +1230,12 @@ const Group = () => {
                   {isFeedLoading && messages.length === 0 ? (
                     <div className="py-10 flex justify-center">
                       <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : null}
+
+                  {!isFeedLoading && !feedError && messages.length === 0 ? (
+                    <div className="text-center text-slate-500 py-10 italic border border-dashed border-white/5 rounded-3xl">
+                      No posts yet. Be the first to share an update.
                     </div>
                   ) : null}
 
@@ -1044,7 +1275,7 @@ const Group = () => {
             )}
           </main>
 
-          <aside className="lg:col-span-4 p-8 overflow-y-auto">
+          <aside className="lg:col-span-4 p-8 pb-24">
             <div className="space-y-6">
               <h3 className="text-xs font-black uppercase text-slate-500 tracking-[0.2em] mb-4">Squad Reminders</h3>
 
@@ -1066,32 +1297,38 @@ const Group = () => {
                 </div>
               ) : null}
 
-              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                {reminders.map((rem) => (
-                  <div key={rem.id} className="bg-amber-500/5 border border-amber-500/20 p-4 rounded-2xl">
-                    <div className="flex gap-3">
-                      <FiAlertCircle className="text-amber-500 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-amber-200/80 leading-relaxed font-medium">{rem.text}</p>
+              {reminders.length === 0 ? (
+                <div className="text-center text-slate-500 py-8 italic border border-dashed border-white/5 rounded-3xl">
+                  No reminders yet.
+                </div>
+              ) : (
+                <div className="space-y-3 pr-2">
+                  {reminders.map((rem) => (
+                    <div key={rem.id} className="bg-amber-500/5 border border-amber-500/20 p-4 rounded-2xl">
+                      <div className="flex gap-3">
+                        <FiAlertCircle className="text-amber-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-amber-200/80 leading-relaxed font-medium">{rem.text}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="pt-6 border-t border-white/5">
               <h3 className="text-xs font-black uppercase text-slate-500 tracking-[0.2em] mb-4 flex items-center gap-2"><FiCalendar /> Calendar Sync</h3>
-              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
-                <div className="flex items-center justify-between gap-3 mb-4">
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3">
+                <div className="flex items-center justify-between gap-3 mb-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-black text-slate-100 tracking-tight truncate">{calendarTitle}</p>
-                    <p className="text-[11px] text-slate-500 font-bold">Click a day to view deadlines.</p>
+                    <p className="text-xs font-black text-slate-100 tracking-tight truncate">{calendarTitle}</p>
+                    <p className="text-[10px] text-slate-500 font-bold">Click a day to view deadlines.</p>
                   </div>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       type="button"
                       onClick={() => moveCalendarMonth(-1)}
-                      className="h-9 w-9 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors flex items-center justify-center text-slate-200"
+                      className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors flex items-center justify-center text-slate-200"
                       aria-label="Previous month"
                     >
                       <FiChevronLeft />
@@ -1099,7 +1336,7 @@ const Group = () => {
                     <button
                       type="button"
                       onClick={() => moveCalendarMonth(1)}
-                      className="h-9 w-9 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors flex items-center justify-center text-slate-200"
+                      className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors flex items-center justify-center text-slate-200"
                       aria-label="Next month"
                     >
                       <FiChevronRight />
@@ -1107,60 +1344,67 @@ const Group = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-7 gap-2 text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2">
+                <div className="grid grid-cols-7 gap-1 text-[9px] font-black uppercase tracking-widest text-slate-600 mb-2">
                   {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label) => (
-                    <div key={label} className="text-center">{label}</div>
+                    <div
+                      key={label}
+                      className="text-center py-1"
+                    >
+                      {label}
+                    </div>
                   ))}
                 </div>
 
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-7 gap-1">
                   {calendarCells.map((cell) => (
                     <button
                       key={cell.key}
                       type="button"
                       onClick={() => setSelectedDateKey(cell.key)}
                       className={
-                        `relative rounded-xl border transition-colors px-2 py-2 text-left ` +
+                        `relative aspect-square rounded-lg border transition-colors p-1.5 flex flex-col justify-between ` +
                         (cell.isSelected
-                          ? 'bg-blue-600/20 border-blue-500/50'
+                          ? 'bg-white/[0.02] border-blue-500/40'
                           : cell.isCurrentMonth
-                          ? 'bg-white/5 border-white/10 hover:bg-white/10'
-                          : 'bg-white/[0.02] border-white/5 opacity-60 hover:opacity-80')
+                          ? 'bg-transparent border-white/5 hover:border-white/10'
+                          : 'bg-transparent border-transparent opacity-50 hover:opacity-70')
                       }
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-1">
                         <span className={
-                          `text-[11px] font-black ` +
+                          `text-[10px] font-black ` +
                           (cell.isToday ? 'text-blue-300' : cell.isCurrentMonth ? 'text-slate-200' : 'text-slate-500')
                         }>
                           {cell.dayNumber}
                         </span>
                         {cell.tasks.length > 0 ? (
-                          <span className="text-[10px] font-black text-slate-500">{cell.tasks.length}</span>
+                          <span className="text-[9px] font-black text-slate-600">
+                            {cell.tasks.length}
+                          </span>
                         ) : null}
                       </div>
 
                       {cell.tasks.length > 0 ? (
-                        <div className="mt-2 flex items-center gap-1">
+                        <div className="mt-1 flex items-center justify-center gap-1">
                           {cell.tasks.slice(0, 3).map((task) => (
                             <span
                               key={task.id}
                               className={
-                                `h-1.5 w-1.5 rounded-full ` +
+                                `h-1 w-1 rounded-full ` +
                                 (task.completed ? 'bg-emerald-400' : getPriorityDot(task.priority))
                               }
                             />
                           ))}
-                          {cell.tasks.length > 3 ? <span className="text-[10px] font-black text-slate-500">+</span> : null}
+                          {cell.tasks.length > 3 ? <span className="text-[9px] font-black text-slate-500">+</span> : null}
                         </div>
                       ) : (
-                        <div className="mt-2 h-1.5" />
+                        <div className="mt-1 h-1" />
                       )}
                     </button>
                   ))}
                 </div>
 
-                <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-3">
+                <div className="mt-3 rounded-2xl bg-transparent border border-white/5 p-2.5">
                   <div className="flex items-center justify-between gap-3 mb-2">
                     <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">Selected day</p>
                     <p className="text-[11px] font-bold text-slate-300">{selectedDateKey}</p>

@@ -25,6 +25,13 @@ const {
 	createGroupMessage,
 } = require('../controllers/groupMessageController');
 
+const {
+	getWorkspace,
+	createTask,
+	updateTask,
+	createReminder,
+} = require('../controllers/groupWorkspaceController');
+
 const router = express.Router();
 
 const storage = multer.diskStorage({
@@ -67,5 +74,10 @@ router.delete('/:groupId/files/:fileId', isLoggedIn, deleteGroupFile);
 
 router.get('/:groupId/messages', isLoggedIn, listGroupMessages);
 router.post('/:groupId/messages', isLoggedIn, createGroupMessage);
+
+router.get('/:groupId/workspace', isLoggedIn, getWorkspace);
+router.post('/:groupId/tasks', isLoggedIn, createTask);
+router.patch('/:groupId/tasks/:taskId', isLoggedIn, updateTask);
+router.post('/:groupId/reminders', isLoggedIn, createReminder);
 
 module.exports = router;

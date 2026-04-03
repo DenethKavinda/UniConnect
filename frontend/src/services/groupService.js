@@ -36,6 +36,26 @@ const groupService = {
     return response.data;
   },
 
+  getWorkspace: async (groupId) => {
+    const response = await API.get(`/groups/${groupId}/workspace`);
+    return response.data;
+  },
+
+  createTask: async (groupId, payload) => {
+    const response = await API.post(`/groups/${groupId}/tasks`, payload);
+    return response.data;
+  },
+
+  updateTask: async (groupId, taskId, payload) => {
+    const response = await API.patch(`/groups/${groupId}/tasks/${taskId}`, payload);
+    return response.data;
+  },
+
+  createReminder: async (groupId, payload) => {
+    const response = await API.post(`/groups/${groupId}/reminders`, payload);
+    return response.data;
+  },
+
   uploadGroupFiles: async (groupId, files) => {
     const data = new FormData();
     for (const file of files) {

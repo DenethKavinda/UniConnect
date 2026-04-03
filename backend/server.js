@@ -16,6 +16,7 @@ const postRoutes = require("./routes/posts");
 const commentRoutes = require("./routes/comments");
 const materialRoutes = require("./routes/materials");
 const groupRoutes = require("./routes/groups");
+const { startTaskDeadlineReminderJob } = require("./jobs/taskDeadlineReminderJob");
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -152,6 +153,8 @@ const startServer = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI || process.env.DB_URI);
     console.log(" MongoDB connected successfully");
+
+    startTaskDeadlineReminderJob();
 
     await seedAdmin();
     await listenWithRetry(PORT);

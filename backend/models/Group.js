@@ -1,5 +1,28 @@
 const mongoose = require('mongoose');
 
+const groupTaskSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true, trim: true, maxlength: 120 },
+    priority: { type: String, enum: ['high', 'medium', 'low'], default: 'medium' },
+    // Date key used by the calendar in the UI, e.g. "2026-04-03".
+    date: { type: String, required: true },
+    completed: { type: Boolean, default: false },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    lastReminderSentAt: { type: Date, default: null },
+    // Stores sent reminder keys like "2026-04-03:1" meaning "sent on 2026-04-03 for due-in-1-day reminder".
+    lastReminderSentKeys: { type: [String], default: [] },
+  },
+  { timestamps: true }
+);
+
+const groupReminderSchema = new mongoose.Schema(
+  {
+    text: { type: String, required: true, trim: true, maxlength: 160 },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  },
+  { timestamps: true }
+);
+
 const groupSchema = new mongoose.Schema(
   {
     groupName: { type: String, required: true, trim: true },
@@ -27,7 +50,11 @@ const groupSchema = new mongoose.Schema(
     },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    pendingRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    pendingRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+
+    // Workspace state (persists across refresh and is shared across members)
+    tasks: { type: [groupTaskSchema], default: [] },
+    reminders: { type: [groupReminderSchema], default: [] }
   },
   { timestamps: true }
 );
