@@ -2,6 +2,15 @@ const cron = require('node-cron');
 const Group = require('../models/Group');
 const User = require('../models/User');
 const { sendEmail, isMailerConfigured } = require('../utils/mailer');
+const mongoose = require('mongoose');
+
+const normalizeObjectId = (value) => {
+  if (!value) return null;
+  const candidate = typeof value === 'object' && value._id ? value._id : value;
+  const asString = String(candidate);
+  if (!mongoose.Types.ObjectId.isValid(asString)) return null;
+  return asString;
+};
 
 const toDateKey = (date) => {
   const year = date.getFullYear();
@@ -143,8 +152,8 @@ const sendTodaysTaskReminders = async () => {
       ...(Array.isArray(group.members) ? group.members : []),
       group.createdBy,
     ]
-      .filter(Boolean)
-      .map((id) => String(id));
+      .map(normalizeObjectId)
+      .filter(Boolean);
 
     const uniqueIds = Array.from(new Set(memberIds));
     if (uniqueIds.length === 0) continue;
@@ -154,13 +163,15 @@ const sendTodaysTaskReminders = async () => {
       .map((u) => String(u?.email || '').trim())
       .filter(Boolean);
 
-    if (recipients.length === 0) continue;
+    const uniqueRecipients = Array.from(new Set(recipients));
+
+    if (uniqueRecipients.length === 0) continue;
 
     const subject = `UniConnect: ${group.groupName || 'Group'} assignment deadlines`;
     const html = buildEmailHtml({ groupName: group.groupName, todayKey, dueIn4Days, dueTomorrow, dueToday });
     const text = buildEmailText({ groupName: group.groupName, todayKey, dueIn4Days, dueTomorrow, dueToday });
 
-    const result = await sendEmail({ to: recipients, subject, html, text });
+    const result = await sendEmail({ to: uniqueRecipients, subject, html, text });
 
     if (result.ok) {
       // Mark tasks as reminded for each offset for today
@@ -178,7 +189,7 @@ const sendTodaysTaskReminders = async () => {
       }
       await group.save();
       console.log(
-        `[TaskReminderJob] Sent ${recipients.length} reminder(s) for group ${group._id} (due4=${dueIn4Days.length}, due1=${dueTomorrow.length}, due0=${dueToday.length})`
+        `[TaskReminderJob] Sent ${uniqueRecipients.length} reminder(s) for group ${group._id} (due4=${dueIn4Days.length}, due1=${dueTomorrow.length}, due0=${dueToday.length})`
       );
     } else {
       console.warn(`[TaskReminderJob] Failed to send reminders for group ${group._id}: ${result.error}`);

@@ -1,5 +1,15 @@
 const mongoose = require('mongoose');
 const Group = require('../models/Group');
+const User = require('../models/User');
+const { sendEmail, isMailerConfigured } = require('../utils/mailer');
+
+const normalizeObjectId = (value) => {
+  if (!value) return null;
+  const candidate = typeof value === 'object' && value._id ? value._id : value;
+  const asString = String(candidate);
+  if (!mongoose.Types.ObjectId.isValid(asString)) return null;
+  return asString;
+};
 
 const ensureCanAccessWorkspace = (group, requesterId, role) => {
   const isAdmin = role === 'admin';
@@ -90,7 +100,7 @@ const createTask = async (req, res, next) => {
     if (!allowedPriorities.has(priority)) return res.status(400).json({ message: 'Invalid priority.' });
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ message: 'Invalid due date.' });
 
-    const group = await Group.findById(groupId).select('_id createdBy members tasks');
+    const group = await Group.findById(groupId).select('_id groupName createdBy members tasks');
     if (!group) return res.status(404).json({ message: 'Group not found.' });
 
     const access = ensureCanAccessWorkspace(group, requesterId, role);
@@ -102,6 +112,55 @@ const createTask = async (req, res, next) => {
     await group.save();
 
     const created = group.tasks[group.tasks.length - 1];
+
+    // Best-effort: email all group members when a task is assigned/created.
+    try {
+      if (isMailerConfigured()) {
+        const memberIds = [
+          ...(Array.isArray(group.members) ? group.members : []),
+          group.createdBy,
+        ]
+          .map(normalizeObjectId)
+          .filter(Boolean);
+
+        const uniqueIds = Array.from(new Set(memberIds));
+        if (uniqueIds.length > 0) {
+          const users = await User.find({ _id: { $in: uniqueIds } }).select('email');
+          const recipients = (Array.isArray(users) ? users : [])
+            .map((u) => String(u?.email || '').trim())
+            .filter(Boolean);
+
+          const uniqueRecipients = Array.from(new Set(recipients));
+
+          if (uniqueRecipients.length > 0) {
+            const groupLabel = group.groupName || 'your group';
+            const subject = `UniConnect: New task assigned in ${groupLabel}`;
+            const html = `
+              <div style="font-family: Arial, Helvetica, sans-serif; color: #0f172a;">
+                <h2 style="margin: 0 0 8px 0;">New task assigned</h2>
+                <p style="margin: 0 0 10px 0;">Group: <strong>${String(groupLabel)}</strong></p>
+                <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc;">
+                  <p style="margin: 0 0 6px 0;"><strong>${String(title)}</strong></p>
+                  <p style="margin: 0; opacity: .8;">Priority: ${String(priority)} • Due: ${String(date)}</p>
+                </div>
+                <p style="margin: 12px 0 0 0; opacity: .75; font-size: 12px;">Sent by UniConnect</p>
+              </div>
+            `;
+            const text = `New task assigned\n\nGroup: ${String(groupLabel)}\nTask: ${String(title)}\nPriority: ${String(
+              priority
+            )}\nDue: ${String(date)}\n\nSent by UniConnect`;
+
+            const result = await sendEmail({ to: uniqueRecipients, subject, html, text });
+            if (!result.ok) {
+              console.warn(`[Workspace] Failed to send task assignment email: ${result.error}`);
+            }
+          }
+        }
+      }
+    } catch (emailError) {
+      console.warn('[Workspace] Task assignment email error:', emailError?.message || emailError);
+    }
+
     return res.status(201).json({
       message: 'Task added.',
       task: toClientTask(created),
