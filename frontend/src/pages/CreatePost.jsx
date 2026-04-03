@@ -15,8 +15,8 @@ const CreatePost = () => {
   const [subject, setSubject] = useState('General');
   const [tagsInput, setTagsInput] = useState('');
   const [tags, setTags] = useState([]);
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState('');
+  const [imageDataList, setImageDataList] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -51,33 +51,61 @@ const CreatePost = () => {
   };
 
   const handleImageFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.mimetype || file.type)) {
-        setError('Only image files are allowed (jpeg, png, gif, webp)');
-        return;
-      }
-      // Validate file size (5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Image file size must be less than 5MB');
-        return;
-      }
-      setImageFile(file);
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target.result);
-      };
-      reader.readAsDataURL(file);
-      setError('');
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const currentCount = imageDataList.length;
+    if (currentCount >= 5) {
+      setError('You can upload up to 5 images per post');
+      e.target.value = '';
+      return;
     }
+
+    if (currentCount + files.length > 5) {
+      setError(`You can upload up to 5 images per post (currently selected: ${currentCount})`);
+      e.target.value = '';
+      return;
+    }
+
+    const hasInvalidType = files.some(
+      (file) => !['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
+    );
+    if (hasInvalidType) {
+      setError('Only image files are allowed (jpeg, png, gif, webp)');
+      e.target.value = '';
+      return;
+    }
+
+    const hasInvalidSize = files.some((file) => file.size > 5 * 1024 * 1024);
+    if (hasInvalidSize) {
+      setError('Each image file size must be less than 5MB');
+      e.target.value = '';
+      return;
+    }
+
+    Promise.all(
+      files.map(
+        (file) =>
+          new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              resolve(typeof event.target?.result === 'string' ? event.target.result : '');
+            };
+            reader.readAsDataURL(file);
+          })
+      )
+    ).then((results) => {
+      const cleaned = results.filter(Boolean);
+      setImageDataList((prev) => [...prev, ...cleaned].slice(0, 5));
+      setImagePreviews((prev) => [...prev, ...cleaned].slice(0, 5));
+      setError('');
+      e.target.value = '';
+    });
   };
 
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview('');
+  const removeImage = (indexToRemove) => {
+    setImageDataList((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+    setImagePreviews((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const removeTag = (indexToRemove) => {
@@ -104,18 +132,13 @@ const CreatePost = () => {
         ...tagsInput.split(',').map((t) => t.trim()).filter(Boolean),
       ];
 
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append('title', title.trim());
-      formData.append('content', content.trim());
-      formData.append('subject', subject);
-      formData.append('tags', JSON.stringify(parsedTags)); // Send tags as JSON string
-      
-      if (imageFile) {
-        formData.append('image', imageFile);
-      }
-
-      const newPost = await postService.createPost(formData);
+      const newPost = await postService.createPost({
+        title: title.trim(),
+        content: content.trim(),
+        subject,
+        tags: parsedTags,
+        images: imageDataList,
+      });
       navigate(`/posts/${newPost._id}`);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create post.');
@@ -266,35 +289,40 @@ const CreatePost = () => {
           {/* Image Upload */}
           <div>
             <label className="block text-sm text-slate-200 font-semibold mb-2">
-              Image (optional)
+              Images (optional)
             </label>
             <div className="space-y-3">
               {/* File Upload Input */}
               <div className="relative">
                 <input
                   type="file"
+                  multiple
                   accept="image/*"
                   onChange={handleImageFileChange}
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-slate-100 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-amber-400/10 file:text-amber-300 file:cursor-pointer hover:file:bg-amber-400/20 outline-none focus:border-blue-400/70 focus:ring-1 focus:ring-blue-400/20"
                 />
-                <p className="text-xs text-slate-400 mt-1">Max file size: 5MB (JPEG, PNG, GIF, WebP)</p>
+                <p className="text-xs text-slate-400 mt-1">Up to 5 images, max 5MB each (JPEG, PNG, GIF, WebP)</p>
               </div>
 
               {/* Image Preview */}
-              {imagePreview && (
-                <div className="relative">
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="w-full max-h-48 object-cover rounded-xl border border-white/10"
-                  />
-                  <button
-                    type="button"
-                    onClick={removeImage}
-                    className="absolute top-2 right-2 bg-red-500/20 border border-red-400/30 text-red-300 rounded-full p-1 hover:bg-red-500/30 transition-colors"
-                  >
-                    <FiX size={16} />
-                  </button>
+              {imagePreviews.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {imagePreviews.map((preview, idx) => (
+                    <div key={idx} className="relative">
+                      <img
+                        src={preview}
+                        alt={`Preview ${idx + 1}`}
+                        className="w-full h-32 object-cover rounded-xl border border-white/10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        className="absolute top-2 right-2 bg-red-500/20 border border-red-400/30 text-red-300 rounded-full p-1 hover:bg-red-500/30 transition-colors"
+                      >
+                        <FiX size={14} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

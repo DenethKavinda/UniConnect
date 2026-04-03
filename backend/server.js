@@ -27,7 +27,7 @@ dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "40mb" }));
 
 // Serve uploads folder statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
