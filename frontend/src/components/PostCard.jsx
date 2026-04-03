@@ -79,6 +79,18 @@ const PostCard = ({ post, currentUserId, onVote, onClick }) => {
           {post.content}
         </p>
 
+        {/* Image Preview */}
+        {post.image && (
+          <div className="mb-2 overflow-hidden rounded-lg border border-white/10">
+            <img
+              src={post.image}
+              alt="Post attachment"
+              className="h-44 w-full object-cover"
+              loading="lazy"
+            />
+          </div>
+        )}
+
         {/* Tags */}
         {post.tags && post.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">

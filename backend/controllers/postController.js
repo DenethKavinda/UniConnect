@@ -80,7 +80,7 @@ const getPostById = async (req, res, next) => {
 // POST /api/posts - Create a new post (protected)
 const createPost = async (req, res, next) => {
   try {
-    const { title, content, subject, tags = [], image } = req.body;
+    const { title, content, subject, tags = '[]' } = req.body;
     const userId = getAuthUserId(req.user);
 
     if (!userId) {
@@ -95,14 +95,33 @@ const createPost = async (req, res, next) => {
       return res.status(400).json({ message: 'Content is required' });
     }
 
+    // Parse tags from JSON string if needed
+    let parsedTags = [];
+    if (typeof tags === 'string') {
+      try {
+        parsedTags = JSON.parse(tags);
+      } catch {
+        parsedTags = [];
+      }
+    } else {
+      parsedTags = Array.isArray(tags) ? tags : [];
+    }
+
+    // Determine image: uploaded file or URL
+    let imagePath = '';
+    if (req.file) {
+      // File was uploaded
+      imagePath = `/uploads/${req.file.filename}`;
+    }
+
     // Create new post
     const newPost = new Post({
       title: title.trim(),
       content: content.trim(),
       author: userId,
       subject: subject || 'General',
-      tags: Array.isArray(tags) ? tags.filter(t => t && t.trim()) : [],
-      image: image || '',
+      tags: parsedTags.filter(t => t && t.trim()),
+      image: imagePath,
     });
 
     await newPost.save();
@@ -144,8 +163,30 @@ const updatePost = async (req, res, next) => {
     if (typeof title === 'string' && title.trim()) post.title = title.trim();
     if (typeof content === 'string' && content.trim()) post.content = content.trim();
     if (subject !== undefined) post.subject = subject;
-    if (tags) post.tags = Array.isArray(tags) ? tags.filter(t => t && t.trim()) : [];
-    if (image !== undefined) post.image = image;
+    
+    // Handle tags - parse from JSON string if from FormData
+    if (tags !== undefined) {
+      let parsedTags = [];
+      if (typeof tags === 'string') {
+        try {
+          parsedTags = JSON.parse(tags);
+        } catch {
+          parsedTags = [];
+        }
+      } else {
+        parsedTags = Array.isArray(tags) ? tags : [];
+      }
+      post.tags = parsedTags.filter(t => t && t.trim());
+    }
+    
+    // Handle image update
+    if (req.file) {
+      // File was uploaded
+      post.image = `/uploads/${req.file.filename}`;
+    } else if (image !== undefined) {
+      // URL provided or cleared
+      post.image = image;
+    }
 
     await post.save();
     await post.populate('author', 'name');
