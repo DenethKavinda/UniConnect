@@ -6,7 +6,8 @@ const {
   updateUser,
   changeUserRole,
   toggleBlockUser,
-  deleteUser
+  deleteUser,
+  sendTestEmailAdmin,
 } = require("../controllers/adminController");
 
 const {
@@ -27,5 +28,7 @@ router.put("/users/:id", protect, adminOnly, updateUser);
 router.put("/users/:id/role", protect, adminOnly, changeUserRole);
 router.put("/users/:id/block", protect, adminOnly, toggleBlockUser);
 router.delete("/users/:id", protect, adminOnly, deleteUser);
+
+router.post("/test-email", protect, adminOnly, sendTestEmailAdmin);
 
 module.exports = router;

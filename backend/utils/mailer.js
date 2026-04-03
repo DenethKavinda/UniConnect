@@ -12,19 +12,30 @@ const buildTransportOptions = () => {
     EMAIL_PASS,
   } = process.env;
 
+  const normalizedSmtpPass = typeof SMTP_PASS === 'string' ? SMTP_PASS.replace(/\s+/g, '') : SMTP_PASS;
+  const normalizedEmailPass = typeof EMAIL_PASS === 'string' ? EMAIL_PASS.replace(/\s+/g, '') : EMAIL_PASS;
+
   if (SMTP_HOST) {
     return {
       host: SMTP_HOST,
       port: Number(SMTP_PORT || 587),
       secure: String(SMTP_SECURE || '').toLowerCase() === 'true',
-      auth: SMTP_USER && SMTP_PASS ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
+      auth: SMTP_USER && normalizedSmtpPass ? { user: SMTP_USER, pass: normalizedSmtpPass } : undefined,
     };
   }
 
   if (EMAIL_SERVICE) {
     return {
       service: EMAIL_SERVICE,
-      auth: EMAIL_USER && EMAIL_PASS ? { user: EMAIL_USER, pass: EMAIL_PASS } : undefined,
+      auth: EMAIL_USER && normalizedEmailPass ? { user: EMAIL_USER, pass: normalizedEmailPass } : undefined,
+    };
+  }
+
+  // Convenience: if user provided EMAIL_USER/EMAIL_PASS but forgot EMAIL_SERVICE, assume Gmail.
+  if (EMAIL_USER && normalizedEmailPass) {
+    return {
+      service: 'gmail',
+      auth: { user: EMAIL_USER, pass: normalizedEmailPass },
     };
   }
 
