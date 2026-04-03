@@ -15,7 +15,8 @@ const CreatePost = () => {
   const [subject, setSubject] = useState('General');
   const [tagsInput, setTagsInput] = useState('');
   const [tags, setTags] = useState([]);
-  const [image, setImage] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -49,6 +50,36 @@ const CreatePost = () => {
     }
   };
 
+  const handleImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.mimetype || file.type)) {
+        setError('Only image files are allowed (jpeg, png, gif, webp)');
+        return;
+      }
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image file size must be less than 5MB');
+        return;
+      }
+      setImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+      setError('');
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview('');
+  };
+
   const removeTag = (indexToRemove) => {
     setTags(tags.filter((_, i) => i !== indexToRemove));
   };
@@ -73,13 +104,18 @@ const CreatePost = () => {
         ...tagsInput.split(',').map((t) => t.trim()).filter(Boolean),
       ];
 
-      const newPost = await postService.createPost({
-        title: title.trim(),
-        content: content.trim(),
-        subject,
-        tags: parsedTags,
-        image: image.trim()
-      });
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('title', title.trim());
+      formData.append('content', content.trim());
+      formData.append('subject', subject);
+      formData.append('tags', JSON.stringify(parsedTags)); // Send tags as JSON string
+      
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+
+      const newPost = await postService.createPost(formData);
       navigate(`/posts/${newPost._id}`);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create post.');
@@ -227,19 +263,41 @@ const CreatePost = () => {
             )}
           </div>
 
-          {/* Image URL */}
+          {/* Image Upload */}
           <div>
-            <label htmlFor="image" className="block text-sm text-slate-200 font-semibold mb-2">
-              Image URL (optional)
+            <label className="block text-sm text-slate-200 font-semibold mb-2">
+              Image (optional)
             </label>
-            <input
-              id="image"
-              type="url"
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
-              placeholder="https://example.com/image.jpg"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-slate-100 placeholder:text-slate-500 outline-none focus:border-blue-400/70 focus:ring-1 focus:ring-blue-400/20"
-            />
+            <div className="space-y-3">
+              {/* File Upload Input */}
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageFileChange}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-slate-100 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-amber-400/10 file:text-amber-300 file:cursor-pointer hover:file:bg-amber-400/20 outline-none focus:border-blue-400/70 focus:ring-1 focus:ring-blue-400/20"
+                />
+                <p className="text-xs text-slate-400 mt-1">Max file size: 5MB (JPEG, PNG, GIF, WebP)</p>
+              </div>
+
+              {/* Image Preview */}
+              {imagePreview && (
+                <div className="relative">
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="w-full max-h-48 object-cover rounded-xl border border-white/10"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute top-2 right-2 bg-red-500/20 border border-red-400/30 text-red-300 rounded-full p-1 hover:bg-red-500/30 transition-colors"
+                  >
+                    <FiX size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

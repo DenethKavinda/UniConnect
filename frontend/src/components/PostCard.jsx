@@ -12,7 +12,7 @@ const getAuthorName = (author) => {
 
 const getVoteId = (vote) => (typeof vote === 'string' ? vote : vote?._id || vote?.id);
 
-const PostCard = ({ post, currentUserId, onVote, onClick }) => {
+const PostCard = ({ post, currentUserId, onVote, onClick, onTagClick }) => {
 
   const title = post.title || 'Untitled';
   const authorName = getAuthorName(post.author);
@@ -79,16 +79,33 @@ const PostCard = ({ post, currentUserId, onVote, onClick }) => {
           {post.content}
         </p>
 
+        {/* Image Preview */}
+        {post.image && (
+          <div className="mb-2 overflow-hidden rounded-lg border border-white/10">
+            <img
+              src={post.image}
+              alt="Post attachment"
+              className="h-44 w-full object-cover"
+              loading="lazy"
+            />
+          </div>
+        )}
+
         {/* Tags */}
         {post.tags && post.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
             {post.tags.slice(0, 3).map((tag, idx) => (
-              <span
+              <button
                 key={idx}
-                className="bg-white/5 border border-white/10 text-slate-400 text-xs px-2 py-0.5 rounded-full"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTagClick?.(tag.toLowerCase());
+                }}
+                className="bg-white/5 border border-white/10 text-slate-400 text-xs px-2 py-0.5 rounded-full hover:text-slate-200 hover:border-white/20 transition-colors"
               >
-                {tag}
-              </span>
+                #{tag}
+              </button>
             ))}
           </div>
         )}
