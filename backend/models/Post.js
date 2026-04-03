@@ -22,6 +22,7 @@ const postSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    images: [{ type: String, default: '' }],
     subject: {
       type: String,
       default: 'General',

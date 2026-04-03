@@ -3,6 +3,7 @@ import { FiMessageSquare, FiShare2 } from 'react-icons/fi';
 import VoteButtons from './VoteButtons';
 import SubjectBadge from './SubjectBadge';
 import { timeAgo } from '../utils/timeAgo';
+import { resolveMediaUrl } from '../utils/mediaUrl';
 
 const getAuthorName = (author) => {
   if (!author) return 'Unknown Author';
@@ -21,6 +22,9 @@ const PostCard = ({ post, currentUserId, onVote, onClick, onTagClick }) => {
 
   const upvoteIds = (post.upvotes || []).map(getVoteId);
   const downvoteIds = (post.downvotes || []).map(getVoteId);
+  const postImages = Array.isArray(post.images) && post.images.length > 0
+    ? post.images
+    : (post.image ? [post.image] : []);
   const score = typeof post.voteScore === 'number' ? post.voteScore : upvoteIds.length - downvoteIds.length;
   const userVote = currentUserId
     ? upvoteIds.includes(currentUserId)
@@ -80,14 +84,19 @@ const PostCard = ({ post, currentUserId, onVote, onClick, onTagClick }) => {
         </p>
 
         {/* Image Preview */}
-        {post.image && (
+        {postImages.length > 0 && (
           <div className="mb-2 overflow-hidden rounded-lg border border-white/10">
             <img
-              src={post.image}
+              src={resolveMediaUrl(postImages[0])}
               alt="Post attachment"
               className="h-44 w-full object-cover"
               loading="lazy"
             />
+            {postImages.length > 1 && (
+              <div className="px-2 py-1 text-xs text-slate-300 bg-black/40 border-t border-white/10">
+                +{postImages.length - 1} more image{postImages.length - 1 > 1 ? 's' : ''}
+              </div>
+            )}
           </div>
         )}
 
