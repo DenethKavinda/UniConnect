@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const { sendEmail } = require("../utils/mailer");
 
 const getAllUsers = async (req, res) => {
   try {
@@ -163,10 +164,53 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const sendTestEmailAdmin = async (req, res) => {
+  try {
+    const to = String(req.body?.to || "").trim();
+    if (!to) {
+      return res.status(400).json({
+        success: false,
+        message: "Recipient email is required (field: to)",
+      });
+    }
+
+    const result = await sendEmail({
+      to,
+      subject: "UniConnect test email",
+      text: "This is a UniConnect test email. If you received this, Gmail sending is working.",
+      html: `
+        <div style="font-family: Arial, Helvetica, sans-serif; color: #0f172a;">
+          <h2 style="margin: 0 0 8px 0;">UniConnect test email</h2>
+          <p style="margin: 0 0 8px 0;">If you received this, Gmail sending is working.</p>
+          <p style="margin: 0; opacity: .75; font-size: 12px;">Sent by UniConnect</p>
+        </div>
+      `,
+    });
+
+    if (!result.ok) {
+      return res.status(500).json({
+        success: false,
+        message: result.error || "Failed to send test email",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Test email sent",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Failed to send test email",
+    });
+  }
+};
+
 module.exports = {
   getAllUsers,
   updateUser,
   changeUserRole,
   toggleBlockUser,
   deleteUser,
+  sendTestEmailAdmin,
 };

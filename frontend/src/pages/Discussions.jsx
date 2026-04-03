@@ -167,7 +167,7 @@ const Discussions = () => {
           </div>
           <div className="flex items-center justify-between">
             <p className="text-sm text-slate-400">{posts.length} posts · {SUBJECTS.length - 1} subjects</p>
-            <Link to="/posts/create" className="bg-[#EAB308] text-[#0a0d17] font-semibold px-4 py-2 rounded-lg hover:brightness-110 transition-all">
+            <Link to="/posts/create" className="app-btn-primary font-semibold px-4 py-2 rounded-lg hover:brightness-110 transition-all">
               + Create Post
             </Link>
           </div>
@@ -305,7 +305,7 @@ const Discussions = () => {
               </p>
               <Link
                 to="/posts/create"
-                className="mt-3 block w-full text-center bg-[#EAB308] text-[#0a0d17] font-semibold text-sm py-2 rounded-lg hover:brightness-110 transition-all"
+                className="app-btn-primary mt-3 block w-full text-center font-semibold text-sm py-2 rounded-lg hover:brightness-110 transition-all"
               >
                 + New Post
               </Link>

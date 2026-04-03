@@ -42,19 +42,29 @@ const modules = [
     gradient: "from-amber-500 to-yellow-500",
     count: "12 My Groups",
   },
+  {
+    title: "Feedback",
+    description:
+      "Rate UniConnect and share suggestions. Help us improve the platform for everyone.",
+    icon: <FiStar />,
+    to: "/dashboard/feedback",
+    gradient: "from-amber-400 to-orange-500",
+    count: "Rate & review",
+  },
 ];
 
 const tips = [
   "Upload materials to help your peers & earn recognition.",
   "Join study groups to stay on track with assignments.",
   "Use the forum to ask questions – the community is here to help!",
+  "Leave a star rating and feedback — it helps us improve UniConnect.",
 ];
 
 const Dashboard = () => {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-[#0a0d17] text-slate-200 font-sans selection:bg-amber-500/30 pb-20">
+    <div className="app-page min-h-screen font-sans selection:bg-amber-500/30 pb-20">
       {/* --- PREMIUM BACKGROUND GLOWS --- */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
@@ -115,7 +125,7 @@ const Dashboard = () => {
             </div>
 
             {/* Modules Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
               {modules.map((mod, index) => (
                 <Link
                   key={mod.title}
@@ -184,7 +194,7 @@ const Dashboard = () => {
                 <span className="text-amber-400 font-bold">Gold Scholar</span>{" "}
                 badge.
               </p>
-              <button className="w-full bg-amber-500 text-[#0a0d17] font-bold py-4 rounded-2xl hover:bg-amber-400 transition-all shadow-xl shadow-amber-500/20">
+              <button className="app-btn-primary w-full font-bold py-4 rounded-2xl hover:brightness-110 transition-all shadow-xl shadow-amber-500/20">
                 Upload Now
               </button>
             </div>
@@ -197,7 +207,7 @@ const Dashboard = () => {
               <div className="space-y-4">
                 {tips.map((tip, i) => (
                   <div key={i} className="flex gap-3 items-start group">
-                    <div className="w-6 h-6 rounded-md bg-blue-500/10 flex items-center justify-center text-[10px] font-bold text-blue-400 group-hover:bg-amber-500 group-hover:text-[#0a0d17] transition-all">
+                    <div className="w-6 h-6 rounded-md bg-blue-500/10 flex items-center justify-center text-[10px] font-bold text-blue-400 transition-all">
                       {i + 1}
                     </div>
                     <p className="text-xs text-slate-400 leading-relaxed group-hover:text-slate-200">

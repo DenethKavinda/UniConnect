@@ -3,8 +3,19 @@ const User = require("../models/User");
 
 const seedAdmin = async () => {
   try {
+    const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminName = process.env.ADMIN_NAME?.trim() || "System Admin";
+
+    if (!adminEmail || !adminPassword) {
+      console.warn(
+        "Skipping system admin seed: ADMIN_EMAIL or ADMIN_PASSWORD is not configured"
+      );
+      return;
+    }
+
     const existingAdmin = await User.findOne({
-      email: process.env.ADMIN_EMAIL.toLowerCase()
+      email: adminEmail,
     });
 
     if (existingAdmin) {
@@ -12,14 +23,14 @@ const seedAdmin = async () => {
       return;
     }
 
-    const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
     await User.create({
-      name: process.env.ADMIN_NAME,
-      email: process.env.ADMIN_EMAIL.toLowerCase(),
+      name: adminName,
+      email: adminEmail,
       password: hashedPassword,
       role: "admin",
-      isBlocked: false
+      isBlocked: false,
     });
 
     console.log("System admin created successfully");

@@ -7,6 +7,18 @@
     /* SLIIT Official Colors [cite: 3] */
     --sliit-blue: #00538E;
     --sliit-gold: #F7941D;
+    --admin-accent: #2dd4bf;
+    --admin-surface: #0f172a;
+    --admin-surface-2: #101e39;
+    --admin-border: #1e293b;
+    --app-page-bg: #0a0d17;
+    --app-surface: #1a1f2e;
+    --app-surface-soft: #0f172a;
+    --app-text: #e2e8f0;
+    --app-text-muted: #94a3b8;
+    --app-primary: #eab308;
+    --app-primary-text: #0a0d17;
+    --app-focus: #14b8a6;
 
     /* Dark Theme Palette */
     --bg-dark: #050b18;
@@ -17,7 +29,28 @@
   body {
     @apply bg-[#050b18] text-white antialiased;
     font-family: 'Inter', sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
+}
+
+html[data-admin-theme="light"] body {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+html[data-admin-theme="light"] {
+  --admin-accent: #0ea5e9;
+  --admin-surface: #ffffff;
+  --admin-surface-2: #f8fafc;
+  --admin-border: #cbd5e1;
+  --app-page-bg: #f1f5f9;
+  --app-surface: #ffffff;
+  --app-surface-soft: #f8fafc;
+  --app-text: #0f172a;
+  --app-text-muted: #475569;
+  --app-primary: #0ea5e9;
+  --app-primary-text: #ffffff;
+  --app-focus: #0ea5e9;
 }
 
 @layer components {
@@ -43,5 +76,57 @@
   /* Input Fields for all Modules [cite: 68, 121, 168, 220] */
   .uni-input {
     @apply w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:outline-none focus:border-[#00538E] focus:ring-1 focus:ring-[#00538E] transition-all;
+  }
+
+  .admin-panel-card {
+    background: linear-gradient(135deg, var(--admin-surface), var(--admin-surface-2));
+    border: 1px solid var(--admin-border);
+    border-radius: 1.25rem;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  }
+
+  .admin-pill-toggle {
+    border-radius: 999px;
+    border: 1px solid var(--admin-border);
+    background: color-mix(in srgb, var(--admin-surface) 80%, black 20%);
+    padding: 4px;
+    display: inline-flex;
+    gap: 4px;
+  }
+
+  .app-page {
+    background: var(--app-page-bg);
+    color: var(--app-text);
+  }
+
+  .app-surface {
+    background: var(--app-surface);
+    border: 1px solid color-mix(in srgb, var(--app-text-muted) 30%, transparent);
+  }
+
+  .app-surface-soft {
+    background: var(--app-surface-soft);
+    border: 1px solid color-mix(in srgb, var(--app-text-muted) 30%, transparent);
+  }
+
+  .app-text-muted {
+    color: var(--app-text-muted);
+  }
+
+  .app-input {
+    background: var(--app-surface-soft);
+    color: var(--app-text);
+    border: 1px solid color-mix(in srgb, var(--app-text-muted) 35%, transparent);
+  }
+
+  .app-input:focus {
+    outline: none;
+    border-color: var(--app-focus);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--app-focus) 30%, transparent);
+  }
+
+  .app-btn-primary {
+    background: var(--app-primary);
+    color: var(--app-primary-text);
   }
 }
