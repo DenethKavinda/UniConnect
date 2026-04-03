@@ -15,6 +15,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import UserManagementPage from "./pages/UserManagementPage";
 import Group from "./pages/Group";
 import CreateGroup from "./pages/CreateGroup";
+import JoinGroup from "./pages/JoinGroup";
+import GroupTasksRoute from "./pages/GroupTasksRoute";
 import Material from "./pages/Material";
 import UploadedMaterials from "./pages/UploadedMaterials";
 import MaterialApproval from "./pages/MaterialApproval";
@@ -77,6 +79,22 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["student"]}>
                     <Group />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/groups/:groupId/tasks"
+                element={
+                  <ProtectedRoute allowedRoles={["student"]}>
+                    <GroupTasksRoute />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/groups/join/:groupId"
+                element={
+                  <ProtectedRoute allowedRoles={["student"]}>
+                    <JoinGroup />
                   </ProtectedRoute>
                 }
               />

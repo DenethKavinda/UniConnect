@@ -6,7 +6,13 @@ const groupSchema = new mongoose.Schema(
     moduleSubject: { type: String, required: true, trim: true },
     facultyTag: { type: String, default: 'General', trim: true },
     description: { type: String, required: true, trim: true },
+    // Backward compatible: keep existing `privacy` but also store `privacyType`.
     privacy: {
+      type: String,
+      enum: ['public', 'private', 'request'],
+      default: 'public'
+    },
+    privacyType: {
       type: String,
       enum: ['public', 'private', 'request'],
       default: 'public'
@@ -20,10 +26,21 @@ const groupSchema = new mongoose.Schema(
       taskTracker: { type: Boolean, default: false }
     },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    pendingRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
   },
   { timestamps: true }
 );
+
+groupSchema.pre('save', function syncPrivacyFields(next) {
+  if (!this.privacyType && this.privacy) {
+    this.privacyType = this.privacy;
+  }
+  if (!this.privacy && this.privacyType) {
+    this.privacy = this.privacyType;
+  }
+  next();
+});
 
 groupSchema.index({ groupName: 1, moduleSubject: 1, createdBy: 1 }, { unique: true });
 

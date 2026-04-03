@@ -1,5 +1,13 @@
 const express = require('express');
-const { getGroups, createGroup, joinGroup } = require('../controllers/groupController');
+const {
+	getGroups,
+	createGroup,
+	joinGroup,
+	deleteGroup,
+	listPendingRequests,
+	approvePendingRequest,
+	rejectPendingRequest,
+} = require('../controllers/groupController');
 const { isLoggedIn } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
@@ -11,6 +19,11 @@ const {
 	ensureUploadDir,
 	PROTECTED_UPLOAD_ROOT,
 } = require('../controllers/groupFileController');
+
+const {
+	listGroupMessages,
+	createGroupMessage,
+} = require('../controllers/groupMessageController');
 
 const router = express.Router();
 
@@ -41,10 +54,18 @@ const upload = multer({
 router.get('/', isLoggedIn, getGroups);
 router.post('/', isLoggedIn, createGroup);
 router.post('/:groupId/join', isLoggedIn, joinGroup);
+router.delete('/:groupId', isLoggedIn, deleteGroup);
+
+router.get('/:groupId/pending-requests', isLoggedIn, listPendingRequests);
+router.post('/:groupId/pending-requests/:userId/approve', isLoggedIn, approvePendingRequest);
+router.post('/:groupId/pending-requests/:userId/reject', isLoggedIn, rejectPendingRequest);
 
 router.get('/:groupId/files', isLoggedIn, listGroupFiles);
 router.post('/:groupId/files', isLoggedIn, upload.array('files', 5), uploadGroupFiles);
 router.get('/:groupId/files/:fileId/download', isLoggedIn, downloadGroupFile);
 router.delete('/:groupId/files/:fileId', isLoggedIn, deleteGroupFile);
+
+router.get('/:groupId/messages', isLoggedIn, listGroupMessages);
+router.post('/:groupId/messages', isLoggedIn, createGroupMessage);
 
 module.exports = router;

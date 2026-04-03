@@ -36,6 +36,7 @@ const initialBaseUrl = savedBaseUrl || configuredBaseUrl || fallbackBaseUrls[0];
 
 const API = axios.create({
   baseURL: initialBaseUrl,
+  timeout: 5000,
 });
 
 const baseUrlCandidates = [

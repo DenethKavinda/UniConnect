@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import groupService from '../services/groupService';
 import { useAuth } from '../context/AuthContext';
-import { io } from 'socket.io-client';
 import {
-  FiMessageSquare, FiCheckSquare, FiCalendar,
+  FiCheckSquare, FiCalendar,
   FiPaperclip, FiAlertCircle, FiPlus, FiClock, FiSend, FiSearch, FiChevronLeft, FiChevronRight
 } from 'react-icons/fi';
 
@@ -25,13 +24,23 @@ const mapGroup = (raw, index) => ({
   id: String(raw?._id || raw?.id || `group-${index}`),
   groupName: raw?.groupName || raw?.name || 'Untitled Group',
   memberCount: Number(raw?.memberCount || raw?.membersCount || raw?.members?.length || 0),
+  createdBy: raw?.createdBy || raw?.creator || raw?.owner,
+  memberLimit: typeof raw?.memberLimit === 'number' ? raw.memberLimit : Number(raw?.memberLimit || 0) || undefined,
+  modules: raw?.modules || raw?.features || {
+    sharedMaterials: true,
+    discussionForum: true,
+    taskTracker: false,
+  },
   facultyTag: raw?.facultyTag || raw?.faculty || FACULTY_FALLBACK,
   isJoined: Boolean(raw?.isJoined),
+  privacyType: raw?.privacyType || raw?.privacy || 'public',
+  hasPendingRequest: Boolean(raw?.hasPendingRequest),
 });
 
 const Group = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const auth = useAuth();
 
   const storedUser = useMemo(() => {
@@ -48,7 +57,13 @@ const Group = () => {
 
   const [groups, setGroups] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('tasks');
+  const [hasLoadedGroups, setHasLoadedGroups] = useState(false);
+  const [workspaceError, setWorkspaceError] = useState('');
+  const [reloadTick, setReloadTick] = useState(0);
+  const [activeTab, setActiveTab] = useState(() => {
+    const desired = location?.state?.activeTab;
+    return desired === 'chat' ? 'chat' : 'tasks';
+  });
   const [searchQuery, setSearchQuery] = useState('');
 
   const [tasks, setTasks] = useState([]);
@@ -64,13 +79,18 @@ const Group = () => {
   const [newTask, setNewTask] = useState({ title: '', priority: 'medium', date: '' });
   const [newReminder, setNewReminder] = useState('');
   const [newMessage, setNewMessage] = useState('');
-  const [socket, setSocket] = useState(null);
 
-  const [joinState, setJoinState] = useState({ isJoining: false, error: '', groupId: '' });
+  const [isFeedLoading, setIsFeedLoading] = useState(false);
+  const [feedError, setFeedError] = useState('');
+  const feedSignatureRef = useRef('');
+  const fetchFeedRef = useRef(null);
+
+  const [joinState, setJoinState] = useState({ isJoining: false, error: '', notice: '', groupId: '' });
   const [taskError, setTaskError] = useState('');
   const [reminderError, setReminderError] = useState('');
   const [messageError, setMessageError] = useState('');
   const [fileError, setFileError] = useState('');
+  const [deleteState, setDeleteState] = useState({ isDeleting: false, error: '' });
 
   const [calendarCursor, setCalendarCursor] = useState(() => {
     const now = new Date();
@@ -81,59 +101,122 @@ const Group = () => {
   useEffect(() => {
     const fetchWorkspaceData = async () => {
       setIsLoading(true);
+      setHasLoadedGroups(false);
+      setWorkspaceError('');
       try {
         const payload = await groupService.getGroups();
         const source = Array.isArray(payload) ? payload : payload?.groups || [];
         setGroups(source.map((item, index) => mapGroup(item, index)));
-      } catch {
-        console.error('Failed to fetch workspace data');
+      } catch (error) {
+        console.error('Failed to fetch workspace data', error);
+        const status = error?.response?.status;
+        const apiMessage = error?.response?.data?.message || error?.response?.data?.error || error?.message;
+        const message = apiMessage
+          ? `${apiMessage}${status ? ` (HTTP ${status})` : ''}`
+          : 'Unable to load squads right now. Please try again.';
+        setWorkspaceError(message);
       } finally {
         setIsLoading(false);
+        setHasLoadedGroups(true);
       }
     };
     fetchWorkspaceData();
-  }, [groupId]);
+  }, [groupId, reloadTick]);
+
+  const activeGroup = groups.find((g) => String(g.id) === String(groupId));
+
+  const isGroupCreator = Boolean(activeGroup?.createdBy) && String(activeGroup.createdBy) === String(currentUserId || '');
+
+  const activeModules = activeGroup?.modules || {};
+  const isTaskEnabled = Boolean(activeModules.taskTracker);
+  const isChatEnabled = Boolean(activeModules.discussionForum);
+  const isSharedMaterialsEnabled = Boolean(activeModules.sharedMaterials);
 
   useEffect(() => {
     if (!groupId) return;
+    if (!hasLoadedGroups) return;
+    if (!activeGroup?.isJoined) return;
+    if (!isChatEnabled) return;
+    if (activeTab !== 'chat') return;
 
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    let cancelled = false;
+    let intervalId = null;
 
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || '/';
+    const buildSignature = (items) => {
+      if (!Array.isArray(items) || items.length === 0) return 'empty';
+      // Include ids + timestamps so edits/deletes also invalidate.
+      return items
+        .map((m) => `${String(m?._id || '')}:${String(m?.updatedAt || m?.createdAt || '')}`)
+        .join('|');
+    };
 
-    const s = io(socketUrl, {
-      auth: { token },
-      path: '/socket.io',
-      transports: ['websocket', 'polling'],
-    });
+    const fetchFeed = async () => {
+      if (cancelled) return;
+      setIsFeedLoading(true);
+      setFeedError('');
+      try {
+        const payload = await groupService.getGroupMessages(groupId);
+        const serverMessages = Array.isArray(payload?.messages) ? payload.messages : [];
 
-    s.on('connect', () => {
-      s.emit('joinGroup', { groupId });
-    });
+        const normalized = serverMessages.map((m) => ({
+          id: String(m?._id || ''),
+          text: String(m?.text || ''),
+          sender: String(m?.senderLabel || 'User'),
+          time: m?.createdAt
+            ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : '',
+          _raw: { _id: m?._id, createdAt: m?.createdAt, updatedAt: m?.updatedAt },
+        }));
 
-    s.on('message', (msg) => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          text: msg?.text || '',
-          sender: msg?.sender || 'User',
-          time: msg?.time
-            ? new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
-    });
+        const signature = buildSignature(serverMessages);
+        if (feedSignatureRef.current !== signature) {
+          feedSignatureRef.current = signature;
+          setMessages(normalized);
+        }
+      } catch (error) {
+        const status = error?.response?.status;
+        const apiMessage = error?.response?.data?.message || error?.response?.data?.error || error?.message;
+        const message = apiMessage
+          ? `${apiMessage}${status ? ` (HTTP ${status})` : ''}`
+          : 'Unable to load the squad feed right now.';
+        setFeedError(message);
+      } finally {
+        if (!cancelled) setIsFeedLoading(false);
+      }
+    };
 
-    setSocket(s);
+    fetchFeedRef.current = fetchFeed;
+
+    // Initial load + polling every 20 seconds.
+    fetchFeed();
+    intervalId = window.setInterval(fetchFeed, 20000);
 
     return () => {
-      s.disconnect();
-      setSocket(null);
+      cancelled = true;
+      fetchFeedRef.current = null;
+      if (intervalId) window.clearInterval(intervalId);
     };
-  }, [groupId]);
+  }, [activeGroup?.isJoined, activeTab, groupId, hasLoadedGroups, isChatEnabled]);
 
-  const activeGroup = groups.find((g) => String(g.id) === String(groupId));
+  useEffect(() => {
+    if (!groupId) return;
+    const desired = location?.state?.activeTab;
+    if (desired === 'chat' || desired === 'tasks') {
+      setActiveTab(desired);
+    }
+  }, [groupId, location?.state?.activeTab]);
+
+  useEffect(() => {
+    if (!groupId || !activeGroup?.isJoined) return;
+
+    if (activeTab === 'tasks' && !isTaskEnabled) {
+      if (isChatEnabled) setActiveTab('chat');
+    }
+
+    if (activeTab === 'chat' && !isChatEnabled) {
+      if (isTaskEnabled) setActiveTab('tasks');
+    }
+  }, [activeGroup?.isJoined, activeTab, groupId, isChatEnabled, isTaskEnabled]);
 
   useEffect(() => {
     setImagePreviewUrls({});
@@ -330,29 +413,44 @@ const Group = () => {
   };
 
   const attemptJoinGroup = async (id) => {
-    setJoinState({ isJoining: true, error: '', groupId: String(id || '') });
+    setJoinState({ isJoining: true, error: '', notice: '', groupId: String(id || '') });
     try {
       if (!isValidObjectId(String(id || ''))) {
-        setJoinState({ isJoining: false, error: 'Invalid group id.', groupId: String(id || '') });
+        setJoinState({ isJoining: false, error: 'Invalid group id.', notice: '', groupId: String(id || '') });
         return;
       }
 
       const response = await groupService.joinGroup(String(id));
       const joined = response?.group;
+      const nextIsJoined = Boolean(joined?.isJoined);
+      const nextHasPendingRequest = Boolean(response?.pendingRequest || joined?.hasPendingRequest);
+      const nextPrivacyType = joined?.privacyType || joined?.privacy;
 
       setGroups((prev) =>
         prev.map((g) =>
           String(g.id) === String(id)
             ? {
                 ...g,
-                isJoined: true,
+                isJoined: nextIsJoined,
+                hasPendingRequest: nextHasPendingRequest,
+                privacyType: nextPrivacyType || g.privacyType,
                 memberCount: typeof joined?.memberCount === 'number' ? joined.memberCount : g.memberCount,
               }
             : g
         )
       );
 
-      setJoinState({ isJoining: false, error: '', groupId: '' });
+      if (nextHasPendingRequest && !nextIsJoined) {
+        setJoinState({
+          isJoining: false,
+          error: '',
+          notice: String(response?.message || 'Request sent. Waiting for creator approval.'),
+          groupId: '',
+        });
+        return;
+      }
+
+      setJoinState({ isJoining: false, error: '', notice: '', groupId: '' });
       navigate(`/groups/${id}`);
     } catch (error) {
       const status = error?.response?.status;
@@ -360,7 +458,7 @@ const Group = () => {
       const message = apiMessage
         ? `${apiMessage}${status ? ` (HTTP ${status})` : ''}`
         : 'Unable to join this group right now. Please try again.';
-      setJoinState({ isJoining: false, error: message, groupId: String(id || '') });
+      setJoinState({ isJoining: false, error: message, notice: '', groupId: String(id || '') });
     }
   };
 
@@ -457,19 +555,43 @@ const Group = () => {
       setMessageError('Message must be 500 characters or less.');
       return;
     }
-    if (socket) {
-      socket.emit('sendMessage', { groupId, text: messageText });
-    } else {
-      setMessages([
-        ...messages,
-        {
-          text: messageText,
-          sender: 'Me',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
-    }
+    const optimistic = {
+      id: `local-${Date.now()}`,
+      text: messageText,
+      sender: 'Me',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessages((prev) => [...prev, optimistic]);
     setNewMessage('');
+
+    groupService
+      .createGroupMessage(groupId, { text: messageText })
+      .then((result) => {
+        const created = result?.created;
+        if (created?._id) {
+          const createdItem = {
+            id: String(created._id),
+            text: String(created.text || ''),
+            sender: String(created.senderLabel || 'Me'),
+            time: created.createdAt
+              ? new Date(created.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              : optimistic.time,
+          };
+          setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? createdItem : m)));
+        }
+
+        // Immediately refresh so the feed syncs without waiting 20s.
+        fetchFeedRef.current?.();
+      })
+      .catch((error) => {
+        const status = error?.response?.status;
+        const apiMessage = error?.response?.data?.message || error?.response?.data?.error || error?.message;
+        const message = apiMessage
+          ? `${apiMessage}${status ? ` (HTTP ${status})` : ''}`
+          : 'Unable to post to the squad feed right now.';
+        setMessageError(message);
+      });
   };
 
   const handleFilesSelected = (event) => {
@@ -563,11 +685,56 @@ const Group = () => {
     }
   };
 
+  const handleDeleteGroup = async () => {
+    if (!groupId || !activeGroup) return;
+    if (!isGroupCreator) return;
+
+    setDeleteState({ isDeleting: false, error: '' });
+    const confirmed = window.confirm(`Delete "${activeGroup.groupName}"? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setDeleteState({ isDeleting: true, error: '' });
+    try {
+      await groupService.deleteGroup(groupId);
+      navigate('/groups');
+    } catch (error) {
+      const status = error?.response?.status;
+      const apiMessage = error?.response?.data?.message || error?.response?.data?.error || error?.message;
+      const message = apiMessage
+        ? `${apiMessage}${status ? ` (HTTP ${status})` : ''}`
+        : 'Unable to delete this group right now.';
+      setDeleteState({ isDeleting: false, error: message });
+    }
+  };
+
   if (groupId) {
     if (isLoading) {
       return (
         <div className="app-page min-h-screen flex items-center justify-center">
           <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      );
+    }
+
+    if (workspaceError) {
+      return (
+        <div className="app-page min-h-screen flex flex-col items-center justify-center px-6 text-center">
+          <p className="text-slate-200 font-black mb-2">Unable to load group</p>
+          <p className="text-slate-500 text-sm mb-6">{workspaceError}</p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setReloadTick((v) => v + 1)}
+              className="bg-blue-600 px-6 py-3 rounded-xl font-bold hover:bg-blue-500 transition-colors"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => navigate('/groups')}
+              className="bg-white/5 border border-white/10 px-6 py-3 rounded-xl font-bold hover:bg-white/10 transition-colors"
+            >
+              Back
+            </button>
+          </div>
         </div>
       );
     }
@@ -585,22 +752,40 @@ const Group = () => {
     }
 
     if (!activeGroup.isJoined) {
+      const isPending = Boolean(activeGroup.hasPendingRequest);
+      const joinLabel = isPending
+        ? 'Pending Approval'
+        : activeGroup.privacyType === 'request'
+          ? 'Request to Join'
+          : activeGroup.privacyType === 'private'
+            ? 'Private'
+            : 'Join Group';
+
       return (
         <div className="app-page min-h-screen flex flex-col items-center justify-center px-6 text-center">
-          <p className="text-slate-200 font-black mb-2">Join this group to continue</p>
-          <p className="text-slate-500 text-sm mb-6">You need to join {activeGroup.groupName} before accessing tasks, chat and resources.</p>
+          <p className="text-slate-200 font-black mb-2">{isPending ? 'Request pending approval' : 'Join this group to continue'}</p>
+          <p className="text-slate-500 text-sm mb-6">
+            {isPending
+              ? `Your request to join ${activeGroup.groupName} is waiting for creator approval.`
+              : `You need to join ${activeGroup.groupName} before accessing tasks, chat and resources.`}
+          </p>
           {joinState.error ? (
             <div className="max-w-lg w-full bg-red-500/10 border border-red-500/30 text-red-200 text-sm px-4 py-3 rounded-2xl mb-4">
               {joinState.error}
             </div>
           ) : null}
+          {joinState.notice ? (
+            <div className="max-w-lg w-full bg-blue-500/10 border border-blue-500/30 text-blue-100 text-sm px-4 py-3 rounded-2xl mb-4">
+              {joinState.notice}
+            </div>
+          ) : null}
           <div className="flex gap-3">
             <button
               onClick={() => attemptJoinGroup(activeGroup.id)}
-              disabled={joinState.isJoining}
+              disabled={joinState.isJoining || isPending || activeGroup.privacyType === 'private'}
               className="bg-blue-600 px-6 py-3 rounded-xl font-bold hover:bg-blue-500 transition-colors disabled:opacity-60"
             >
-              {joinState.isJoining ? 'Joining...' : 'Join Group'}
+              {joinState.isJoining ? 'Joining...' : joinLabel}
             </button>
             <button
               onClick={() => navigate('/groups')}
@@ -615,35 +800,58 @@ const Group = () => {
 
     return (
       <div className="app-page min-h-screen">
-        <header className="fixed top-0 w-full z-50 app-page backdrop-blur-md border-b border-white/10 px-8 py-4">
-          <div className="max-w-[1800px] mx-auto flex justify-between items-center">
+        <header className="fixed top-[70px] w-full z-50 app-page backdrop-blur-md border-b border-white/10 px-8 py-4">
+          <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-6">
             <div className="flex items-center gap-4">
               <button onClick={() => navigate('/groups')} className="text-blue-400 font-bold hover:underline">← Exit</button>
               <h1 className="text-xl font-black text-white">{activeGroup.groupName}</h1>
             </div>
-            <div className="hidden md:block w-64">
-              <div className="flex justify-between text-[10px] font-black text-slate-500 mb-1 uppercase tracking-widest">
-                <span>Progress</span>
-                <span className="text-amber-500">{progress.total > 0 ? `${progress.percent}%` : 'Stable'}</span>
-              </div>
-              <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-blue-500 transition-all duration-700 shadow-[0_0_10px_#3b82f6]"
-                  style={{ width: `${progress.percent}%` }}
-                />
+            <div className="flex items-center gap-4 flex-shrink-0">
+              {deleteState.error ? (
+                <span className="hidden md:inline text-xs text-red-200 bg-red-500/10 border border-red-500/30 px-3 py-1.5 rounded-xl max-w-[320px] truncate">
+                  {deleteState.error}
+                </span>
+              ) : null}
+
+              {isGroupCreator ? (
+                <button
+                  type="button"
+                  onClick={handleDeleteGroup}
+                  disabled={deleteState.isDeleting}
+                  className="bg-red-500/10 border border-red-500/30 text-red-200 px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-red-500/15 transition-colors disabled:opacity-60"
+                >
+                  {deleteState.isDeleting ? 'Deleting...' : 'Delete Group'}
+                </button>
+              ) : null}
+
+              <div className="hidden md:block w-64">
+                <div className="flex justify-between text-[10px] font-black text-slate-500 mb-1 uppercase tracking-widest">
+                  <span>Progress</span>
+                  <span className="text-amber-500">{progress.total > 0 ? `${progress.percent}%` : 'Stable'}</span>
+                </div>
+                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500 transition-all duration-700 shadow-[0_0_10px_#3b82f6]"
+                    style={{ width: `${progress.percent}%` }}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </header>
 
-        <div className="max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-12 h-screen pt-20">
+        <div className="max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-12 h-[calc(100vh-70px)] pt-20">
           <main className="lg:col-span-8 border-r border-white/5 p-8 overflow-y-auto">
             <div className="flex gap-4 mb-8">
-              <button onClick={() => setActiveTab('tasks')} className={`px-6 py-2 rounded-xl font-bold transition-all ${activeTab === 'tasks' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-white/5 text-slate-400'}`}>Tasks & Deadlines</button>
-              <button onClick={() => setActiveTab('chat')} className={`px-6 py-2 rounded-xl font-bold transition-all ${activeTab === 'chat' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-white/5 text-slate-400'}`}>Group Chat</button>
+              {isTaskEnabled ? (
+                <button onClick={() => setActiveTab('tasks')} className={`px-6 py-2 rounded-xl font-bold transition-all ${activeTab === 'tasks' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-white/5 text-slate-400'}`}>Tasks & Deadlines</button>
+              ) : null}
+              {isChatEnabled ? (
+                <button onClick={() => setActiveTab('chat')} className={`px-6 py-2 rounded-xl font-bold transition-all ${activeTab === 'chat' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-white/5 text-slate-400'}`}>Squad Feed</button>
+              ) : null}
             </div>
 
-            {activeTab === 'tasks' ? (
+            {activeTab === 'tasks' && isTaskEnabled ? (
               <div className="space-y-6">
                 <form onSubmit={handleAddTask} className="bg-white/5 p-6 rounded-3xl border border-white/10 flex flex-wrap gap-4 items-end backdrop-blur-sm">
                   <div className="flex-1 min-w-[200px]">
@@ -683,6 +891,7 @@ const Group = () => {
                   </div>
                 ) : null}
 
+                {isSharedMaterialsEnabled ? (
                 <div className="bg-white/5 rounded-3xl border border-white/10 p-6 space-y-3 backdrop-blur-sm">
                   <div className="flex items-center justify-between gap-3">
                     <h3 className="text-xs font-black uppercase text-slate-500 tracking-[0.2em] flex items-center gap-2"><FiPaperclip /> Shared Files</h3>
@@ -768,6 +977,7 @@ const Group = () => {
                     </div>
                   )}
                 </div>
+                ) : null}
 
                 <div className="space-y-3">
                   {tasks.length === 0 && <p className="text-center text-slate-500 py-10 italic border border-dashed border-white/5 rounded-3xl">No tasks assigned yet.</p>}
@@ -783,9 +993,21 @@ const Group = () => {
                   ))}
                 </div>
               </div>
-            ) : (
+            ) : activeTab === 'chat' && isChatEnabled ? (
               <div className="flex flex-col h-[70vh]">
                 <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
+                  {feedError ? (
+                    <div className="bg-red-500/10 border border-red-500/30 text-red-200 text-sm px-4 py-3 rounded-2xl">
+                      {feedError}
+                    </div>
+                  ) : null}
+
+                  {isFeedLoading && messages.length === 0 ? (
+                    <div className="py-10 flex justify-center">
+                      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : null}
+
                   {messages.map((m, i) => (
                     <div key={i} className="flex flex-col items-start">
                       <div className="bg-white/5 border border-white/5 p-4 rounded-2xl rounded-bl-none max-w-[80%]">
@@ -800,7 +1022,7 @@ const Group = () => {
                   <input
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Message the squad..."
+                    placeholder="Post to the squad feed..."
                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none focus:border-blue-500 transition-all backdrop-blur-md"
                   />
                   <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 bg-blue-600 p-2.5 rounded-xl text-white">
@@ -814,11 +1036,16 @@ const Group = () => {
                   </div>
                 ) : null}
               </div>
+            ) : (
+              <div className="bg-white/5 rounded-3xl border border-white/10 p-6 backdrop-blur-sm">
+                <p className="text-slate-300 font-black mb-1">No tools enabled</p>
+                <p className="text-slate-500 text-sm">This squad was created without Tasks or Discussion Forum.</p>
+              </div>
             )}
           </main>
 
-          <aside className="lg:col-span-4 p-8 space-y-8 bg-white/[0.01]">
-            <div className="space-y-4">
+          <aside className="lg:col-span-4 p-8 overflow-y-auto">
+            <div className="space-y-6">
               <h3 className="text-xs font-black uppercase text-slate-500 tracking-[0.2em] mb-4">Squad Reminders</h3>
 
               <form onSubmit={handleAddReminder} className="relative mb-6">
@@ -1009,6 +1236,12 @@ const Group = () => {
           </div>
         ) : null}
 
+        {joinState.notice ? (
+          <div className="mb-8 bg-blue-500/10 border border-blue-500/30 text-blue-100 text-sm px-4 py-3 rounded-2xl">
+            {joinState.notice}
+          </div>
+        ) : null}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {isLoading ? (
             <div className="col-span-full py-20 flex justify-center"><div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>
@@ -1024,13 +1257,31 @@ const Group = () => {
                   <button onClick={() => navigate(`/groups/${group.id}`)} className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl font-bold hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all">
                     Enter Workspace
                   </button>
+                ) : group.hasPendingRequest ? (
+                  <button
+                    disabled
+                    className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl font-bold opacity-60"
+                  >
+                    Pending Approval
+                  </button>
+                ) : group.privacyType === 'private' ? (
+                  <button
+                    disabled
+                    className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl font-bold opacity-60"
+                  >
+                    Private
+                  </button>
                 ) : (
                   <button
                     onClick={() => attemptJoinGroup(group.id)}
-                    disabled={joinState.isJoining && joinState.groupId === String(group.id)}
+                    disabled={(joinState.isJoining && joinState.groupId === String(group.id)) || (typeof group.memberLimit === 'number' && group.memberCount >= group.memberLimit)}
                     className="w-full py-4 bg-blue-600 border border-blue-600 rounded-2xl font-bold hover:bg-blue-500 hover:border-blue-500 transition-all disabled:opacity-60"
                   >
-                    {joinState.isJoining && joinState.groupId === String(group.id) ? 'Joining...' : 'Join Group'}
+                    {joinState.isJoining && joinState.groupId === String(group.id)
+                      ? 'Joining...'
+                      : group.privacyType === 'request'
+                        ? 'Request to Join'
+                        : 'Join Group'}
                   </button>
                 )}
               </article>

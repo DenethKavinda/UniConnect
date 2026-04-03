@@ -16,8 +16,23 @@ const groupService = {
     return response.data;
   },
 
+  deleteGroup: async (groupId) => {
+    const response = await API.delete(`/groups/${groupId}`);
+    return response.data;
+  },
+
   getGroupFiles: async (groupId) => {
     const response = await API.get(`/groups/${groupId}/files`);
+    return response.data;
+  },
+
+  getGroupMessages: async (groupId) => {
+    const response = await API.get(`/groups/${groupId}/messages`);
+    return response.data;
+  },
+
+  createGroupMessage: async (groupId, payload) => {
+    const response = await API.post(`/groups/${groupId}/messages`, payload);
     return response.data;
   },
 
