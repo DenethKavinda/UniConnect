@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 
 const getAuthUserId = (user) => user?.userId || user?.id || user?._id || null;
 const hasUserId = (ids, userId) => ids.some((id) => id.toString() === String(userId));
+const escapeRegex = (str = '') => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // GET /api/posts - Get all posts with filtering, sorting, and pagination
 const getAllPosts = async (req, res, next) => {
@@ -16,7 +17,10 @@ const getAllPosts = async (req, res, next) => {
       filter.subject = subject;
     }
     if (tag) {
-      filter.tags = { $in: [tag] };
+      const normalizedTag = String(tag).trim().replace(/^#/, '');
+      if (normalizedTag) {
+        filter.tags = { $elemMatch: { $regex: `^${escapeRegex(normalizedTag)}$`, $options: 'i' } };
+      }
     }
 
     // Build sort object
