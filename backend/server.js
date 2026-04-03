@@ -17,6 +17,7 @@ const commentRoutes = require("./routes/comments");
 const materialRoutes = require("./routes/materials");
 const groupRoutes = require("./routes/groups");
 const feedbackRoutes = require("./routes/feedback");
+const { startTaskDeadlineReminderJob } = require("./jobs/taskDeadlineReminderJob");
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -125,6 +126,12 @@ const io = new Server(httpServer, {
       "http://localhost:3003",
       "http://localhost:3004",
       "http://localhost:3005",
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "http://localhost:5174",
+      "http://127.0.0.1:5174",
+      "http://localhost:4173",
+      "http://127.0.0.1:4173",
     ],
     methods: ["GET", "POST"],
     credentials: true,
@@ -166,6 +173,8 @@ const startServer = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI || process.env.DB_URI);
     console.log(" MongoDB connected successfully");
+
+    startTaskDeadlineReminderJob();
 
     await seedAdmin();
     const boundPort = await listenWithRetry(PORT);

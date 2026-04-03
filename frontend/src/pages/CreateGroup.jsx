@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { FiArrowLeft, FiBookOpen, FiCheckCircle, FiFileText, FiMessageSquare, FiTarget, FiUsers } from 'react-icons/fi';
 import groupService from '../services/groupService';
 
@@ -25,7 +25,6 @@ const PRIVACY_OPTIONS = [
 ];
 
 const CreateGroup = () => {
-  const navigate = useNavigate();
   const [form, setForm] = useState({
     groupName: '',
     moduleSubject: '',
@@ -43,6 +42,13 @@ const CreateGroup = () => {
   const [moduleSearch, setModuleSearch] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState({ type: '', message: '' });
+  const [createdGroupId, setCreatedGroupId] = useState('');
+  const [isLinkCopied, setIsLinkCopied] = useState(false);
+
+  const inviteLink = useMemo(() => {
+    if (!createdGroupId) return '';
+    return `http://localhost:3000/groups/join/${createdGroupId}`;
+  }, [createdGroupId]);
 
   const filteredCodes = useMemo(() => {
     const query = moduleSearch.trim().toLowerCase();
@@ -85,6 +91,7 @@ const CreateGroup = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setFeedback({ type: '', message: '' });
+    setIsLinkCopied(false);
 
     const validationError = validateForm();
     if (validationError) {
@@ -99,6 +106,7 @@ const CreateGroup = () => {
       moduleSubject: form.moduleSubject.trim().toUpperCase(),
       facultyTag: form.facultyTag,
       description: form.description.trim(),
+      privacyType: form.privacy,
       privacy: form.privacy,
       memberLimit: Number(form.memberLimit),
       avatarPreset: form.avatarPreset,
@@ -111,11 +119,14 @@ const CreateGroup = () => {
     };
 
     try {
-      await groupService.createGroup(payload);
-      setFeedback({ type: 'success', message: 'Group created successfully. Redirecting to Groups...' });
-      setTimeout(() => {
-        navigate('/groups');
-      }, 900);
+      const result = await groupService.createGroup(payload);
+      const nextGroupId = result?.group?._id || '';
+      if (!nextGroupId) {
+        setFeedback({ type: 'error', message: 'Group created, but invite link could not be generated.' });
+        return;
+      }
+      setCreatedGroupId(nextGroupId);
+      setFeedback({ type: 'success', message: 'Group created successfully. Copy the invite link to share with others.' });
     } catch (error) {
       const status = error?.response?.status;
       const apiMessage = error?.response?.data?.message || error?.response?.data?.error || error?.message;
@@ -125,6 +136,18 @@ const CreateGroup = () => {
       setFeedback({ type: 'error', message });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCopyInviteLink = async () => {
+    if (!inviteLink) return;
+    setIsLinkCopied(false);
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setIsLinkCopied(true);
+      window.setTimeout(() => setIsLinkCopied(false), 1400);
+    } catch {
+      setFeedback({ type: 'error', message: 'Unable to copy link. Please copy it manually.' });
     }
   };
 
@@ -332,6 +355,21 @@ const CreateGroup = () => {
               }`}
             >
               {feedback.message}
+            </div>
+          ) : null}
+
+          {createdGroupId ? (
+            <div className="rounded-xl px-4 py-3 border border-white/10 bg-white/[0.06] backdrop-blur-xl flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleCopyInviteLink}
+                className="app-btn-primary h-11 px-5 rounded-xl font-semibold border border-blue-400/40 hover:brightness-110 transition"
+              >
+                Copy Invite Link
+              </button>
+              {isLinkCopied ? (
+                <span className="text-sm font-semibold text-emerald-200">Link Copied!</span>
+              ) : null}
             </div>
           ) : null}
 
