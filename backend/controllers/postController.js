@@ -4,6 +4,32 @@ const mongoose = require('mongoose');
 
 const getAuthUserId = (user) => user?.userId || user?.id || user?._id || null;
 const hasUserId = (ids, userId) => ids.some((id) => id.toString() === String(userId));
+const escapeRegex = (str = '') => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const normalizeImages = (rawImages, fallbackImage = '') => {
+  let parsed = [];
+
+  if (typeof rawImages === 'string') {
+    try {
+      const maybeArray = JSON.parse(rawImages);
+      parsed = Array.isArray(maybeArray) ? maybeArray : [];
+    } catch {
+      parsed = rawImages.trim() ? [rawImages.trim()] : [];
+    }
+  } else if (Array.isArray(rawImages)) {
+    parsed = rawImages;
+  }
+
+  if (parsed.length === 0 && typeof fallbackImage === 'string' && fallbackImage.trim()) {
+    parsed = [fallbackImage.trim()];
+  }
+
+  return parsed
+    .filter((value) => typeof value === 'string')
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .slice(0, 5);
+};
 
 // GET /api/posts - Get all posts with filtering, sorting, and pagination
 const getAllPosts = async (req, res, next) => {
@@ -16,7 +42,10 @@ const getAllPosts = async (req, res, next) => {
       filter.subject = subject;
     }
     if (tag) {
-      filter.tags = { $in: [tag] };
+      const normalizedTag = String(tag).trim().replace(/^#/, '');
+      if (normalizedTag) {
+        filter.tags = { $elemMatch: { $regex: `^${escapeRegex(normalizedTag)}$`, $options: 'i' } };
+      }
     }
 
     // Build sort object
@@ -80,7 +109,7 @@ const getPostById = async (req, res, next) => {
 // POST /api/posts - Create a new post (protected)
 const createPost = async (req, res, next) => {
   try {
-    const { title, content, subject, tags = [], image } = req.body;
+    const { title, content, subject, tags = '[]', image = '', images = [] } = req.body;
     const userId = getAuthUserId(req.user);
 
     if (!userId) {
@@ -95,14 +124,30 @@ const createPost = async (req, res, next) => {
       return res.status(400).json({ message: 'Content is required' });
     }
 
+    // Parse tags from JSON string if needed
+    let parsedTags = [];
+    if (typeof tags === 'string') {
+      try {
+        parsedTags = JSON.parse(tags);
+      } catch {
+        parsedTags = [];
+      }
+    } else {
+      parsedTags = Array.isArray(tags) ? tags : [];
+    }
+
+    const imageList = normalizeImages(images, image);
+    const imagePath = imageList[0] || '';
+
     // Create new post
     const newPost = new Post({
       title: title.trim(),
       content: content.trim(),
       author: userId,
       subject: subject || 'General',
-      tags: Array.isArray(tags) ? tags.filter(t => t && t.trim()) : [],
-      image: image || '',
+      tags: parsedTags.filter(t => t && t.trim()),
+      image: imagePath,
+      images: imageList,
     });
 
     await newPost.save();
@@ -118,7 +163,7 @@ const createPost = async (req, res, next) => {
 const updatePost = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { title, content, subject, tags, image } = req.body;
+    const { title, content, subject, tags, image, images } = req.body;
     const userId = getAuthUserId(req.user);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -144,8 +189,28 @@ const updatePost = async (req, res, next) => {
     if (typeof title === 'string' && title.trim()) post.title = title.trim();
     if (typeof content === 'string' && content.trim()) post.content = content.trim();
     if (subject !== undefined) post.subject = subject;
-    if (tags) post.tags = Array.isArray(tags) ? tags.filter(t => t && t.trim()) : [];
-    if (image !== undefined) post.image = image;
+    
+    // Handle tags - parse from JSON string if from FormData
+    if (tags !== undefined) {
+      let parsedTags = [];
+      if (typeof tags === 'string') {
+        try {
+          parsedTags = JSON.parse(tags);
+        } catch {
+          parsedTags = [];
+        }
+      } else {
+        parsedTags = Array.isArray(tags) ? tags : [];
+      }
+      post.tags = parsedTags.filter(t => t && t.trim());
+    }
+    
+    // Handle image update stored directly in MongoDB
+    if (images !== undefined || image !== undefined) {
+      const imageList = normalizeImages(images, image);
+      post.images = imageList;
+      post.image = imageList[0] || '';
+    }
 
     await post.save();
     await post.populate('author', 'name');

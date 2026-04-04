@@ -7,6 +7,7 @@ import VoteButtons from '../components/VoteButtons';
 import SubjectBadge from '../components/SubjectBadge';
 import postService from '../services/postService';
 import { timeAgo } from '../utils/timeAgo';
+import { resolveMediaUrl } from '../utils/mediaUrl';
 
 const DiscussionDetail = () => {
   const { id } = useParams();
@@ -22,6 +23,10 @@ const DiscussionDetail = () => {
   const [submitting, setSubmitting] = useState(false);
   const [sortComments, setSortComments] = useState('best');
   const [userVote, setUserVote] = useState('none');
+
+  const postImages = Array.isArray(post?.images) && post.images.length > 0
+    ? post.images
+    : (post?.image ? [post.image] : []);
 
   const getVoteId = (vote) => (typeof vote === 'string' ? vote : vote?._id || vote?.id);
 
@@ -272,12 +277,17 @@ const DiscussionDetail = () => {
             </p>
 
             {/* Image */}
-            {post.image && (
-              <img
-                src={post.image}
-                alt="Post attachment"
-                className="rounded-lg mb-4 max-w-full max-h-96 object-cover"
-              />
+            {postImages.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                {postImages.map((imageSrc, idx) => (
+                  <img
+                    key={idx}
+                    src={resolveMediaUrl(imageSrc)}
+                    alt={`Post attachment ${idx + 1}`}
+                    className="rounded-lg w-full max-h-96 object-cover border border-white/10"
+                  />
+                ))}
+              </div>
             )}
 
             {/* Tags */}
