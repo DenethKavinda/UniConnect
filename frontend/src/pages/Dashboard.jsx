@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FiBook,
@@ -13,6 +13,8 @@ import {
   FiTrendingUp,
 } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
+import { fetchDashboardSummary } from "../services/dashboardService";
+import { timeAgo } from "../utils/timeAgo";
 
 const modules = [
   {
@@ -63,6 +65,70 @@ const tips = [
 const Dashboard = () => {
   const { user } = useAuth();
 
+  const [summary, setSummary] = useState({
+    stats: {
+      pendingTasksToday: 0,
+      pendingTasksTotal: 0,
+      progressPercent: 0,
+      hours: 0,
+      credits: 0,
+      rank: 0,
+    },
+    activity: [],
+  });
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    const safetyTimeout = setTimeout(() => {
+      if (alive) setLoading(false);
+    }, 8000);
+
+    const run = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchDashboardSummary();
+        if (!alive) return;
+        setSummary({
+          stats: {
+            pendingTasksToday: Number(data?.stats?.pendingTasksToday) || 0,
+            pendingTasksTotal: Number(data?.stats?.pendingTasksTotal) || 0,
+            progressPercent: Number(data?.stats?.progressPercent) || 0,
+            hours: Number(data?.stats?.hours) || 0,
+            credits: Number(data?.stats?.credits) || 0,
+            rank: Number(data?.stats?.rank) || 0,
+          },
+          activity: Array.isArray(data?.activity) ? data.activity : [],
+        });
+      } catch {
+        // Keep existing UI; values will stay at defaults.
+      } finally {
+        if (alive) setLoading(false);
+        clearTimeout(safetyTimeout);
+      }
+    };
+
+    run();
+    return () => {
+      alive = false;
+      clearTimeout(safetyTimeout);
+    };
+  }, []);
+
+  const creditsLabel = useMemo(() => {
+    const value = Number(summary?.stats?.credits) || 0;
+    try {
+      const compact = new Intl.NumberFormat("en", {
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }).format(value);
+      return compact.toLowerCase();
+    } catch {
+      return String(value);
+    }
+  }, [summary?.stats?.credits]);
+
   return (
     <div className="app-page min-h-screen font-sans selection:bg-amber-500/30 pb-20">
       {/* --- PREMIUM BACKGROUND GLOWS --- */}
@@ -93,9 +159,9 @@ const Dashboard = () => {
                 <p className="text-slate-300 text-lg max-w-xl leading-relaxed">
                   Ready to continue? You have{" "}
                   <span className="text-white font-bold underline decoration-amber-500 decoration-2 underline-offset-4">
-                    3 tasks
+                    {loading ? "…" : `${summary.stats.pendingTasksTotal} tasks`}
                   </span>{" "}
-                  pending today.
+                  pending. {loading ? "" : `(${summary.stats.pendingTasksToday} due today)`}
                 </p>
               </div>
             </header>
@@ -105,22 +171,22 @@ const Dashboard = () => {
               <StatCard
                 icon={<FiCheckCircle className="text-blue-400" />}
                 label="Progress"
-                value="78%"
+                value={loading ? "…" : `${summary.stats.progressPercent}%`}
               />
               <StatCard
                 icon={<FiClock className="text-blue-400" />}
                 label="Hours"
-                value="42h"
+                value={loading ? "…" : `${summary.stats.hours}h`}
               />
               <StatCard
                 icon={<FiStar className="text-amber-400" />}
                 label="Credits"
-                value="1.2k"
+                value={loading ? "…" : creditsLabel}
               />
               <StatCard
                 icon={<FiTrendingUp className="text-amber-400" />}
                 label="Rank"
-                value="#12"
+                value={loading ? "…" : `#${summary.stats.rank}`}
               />
             </div>
 
@@ -161,27 +227,16 @@ const Dashboard = () => {
                 <FiActivity className="text-amber-500" /> Live Updates
               </h3>
               <div className="space-y-8">
-                <ActivityItem
-                  name="Pasindu W."
-                  action="shared"
-                  target="IT Notes"
-                  time="2m ago"
-                  color="blue"
-                />
-                <ActivityItem
-                  name="Ishini R."
-                  action="commented"
-                  target="Forum"
-                  time="15m ago"
-                  color="amber"
-                />
-                <ActivityItem
-                  name="Group 04"
-                  action="uploaded"
-                  target="Lab 08"
-                  time="1h ago"
-                  color="blue"
-                />
+                {(summary.activity || []).map((item) => (
+                  <ActivityItem
+                    key={item.id}
+                    name={item.name}
+                    action={item.action}
+                    target={item.target}
+                    time={timeAgo(item.time)}
+                    color={item.color}
+                  />
+                ))}
               </div>
             </div>
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import API from "../services/api";
 import { Link } from "react-router-dom";
 import { FiHome, FiUpload, FiEye } from "react-icons/fi";
 
@@ -787,7 +787,9 @@ const Material = () => {
     Object.keys(formData).forEach((key) => data.append(key, formData[key]));
 
     try {
-      await axios.post("http://localhost:5000/api/materials/upload", data);
+      await API.post("/materials/upload", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       alert("Uploaded Successfully");
       setFormData({
         faculty: "",

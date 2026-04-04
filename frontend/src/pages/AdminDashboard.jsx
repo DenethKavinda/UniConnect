@@ -3,6 +3,7 @@ import API from "../services/api";
 import Sidebar from "../components/Sidebar";
 import { useAdminTheme } from "../context/AdminThemeContext";
 import { getAdminTheme } from "../theme/adminTheme";
+import { FiRefreshCw, FiShield, FiUserCheck, FiUserX, FiUsers } from "react-icons/fi";
 import {
   AreaChart,
   Area,
@@ -34,30 +35,71 @@ const MONTHS = [
 ];
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-function StatCard({ label, value, accent, icon, t }) {
+function withAlpha(hex, alpha) {
+  if (typeof hex !== "string" || !hex.startsWith("#")) return hex;
+  const normalized = hex.length === 4
+    ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+    : hex;
+
+  const r = parseInt(normalized.slice(1, 3), 16);
+  const g = parseInt(normalized.slice(3, 5), 16);
+  const b = parseInt(normalized.slice(5, 7), 16);
+  if ([r, g, b].some((v) => Number.isNaN(v))) return hex;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function AdminCard({ title, subtitle, t, children, right }) {
   return (
-    <div
+    <section
       style={{
         background: t.surface,
         border: `1px solid ${t.border}`,
         borderRadius: "1.25rem",
-        padding: "1.4rem 1.6rem",
+        padding: "1.2rem 1.35rem",
+        boxShadow: t.shadow,
+      }}
+    >
+      {(title || subtitle || right) && (
+        <div
+          className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"
+          style={{ marginBottom: "0.9rem" }}
+        >
+          <div>
+            {title && (
+              <h3 style={{ fontSize: "1rem", fontWeight: 800, color: t.text }}>
+                {title}
+              </h3>
+            )}
+            {subtitle && (
+              <p style={{ fontSize: "0.84rem", color: t.textSubtle, marginTop: "0.15rem" }}>
+                {subtitle}
+              </p>
+            )}
+          </div>
+          {right ? <div className="shrink-0">{right}</div> : null}
+        </div>
+      )}
+      {children}
+    </section>
+  );
+}
+
+function StatCard({ label, value, accent, icon, hint, t }) {
+  return (
+    <div
+      className="transition-transform duration-150 hover:-translate-y-0.5"
+      style={{
+        background: t.surface,
+        border: `1px solid ${t.border}`,
+        borderRadius: "1.25rem",
+        padding: "1.2rem 1.35rem",
         boxShadow: t.shadow,
         display: "flex",
         flexDirection: "column",
         gap: "0.5rem",
         position: "relative",
         overflow: "hidden",
-        transition: "transform 0.18s, box-shadow 0.18s",
         cursor: "default",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-3px)";
-        e.currentTarget.style.boxShadow = `0 8px 32px 0 ${accent}33`;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = t.shadow;
       }}
     >
       <span
@@ -81,21 +123,43 @@ function StatCard({ label, value, accent, icon, t }) {
           justifyContent: "space-between",
         }}
       >
-        <p
+        <div>
+          <p
+            style={{
+              fontSize: "0.76rem",
+              color: t.textMuted,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+            }}
+          >
+            {label}
+          </p>
+          {hint ? (
+            <p style={{ fontSize: "0.82rem", color: t.textSubtle, marginTop: "0.15rem" }}>
+              {hint}
+            </p>
+          ) : null}
+        </div>
+        <span
           style={{
-            fontSize: "0.78rem",
-            color: t.textMuted,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
+            width: 36,
+            height: 36,
+            borderRadius: "0.9rem",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: withAlpha(accent, 0.12),
+            color: accent,
+            border: `1px solid ${withAlpha(accent, 0.25)}`,
+            flexShrink: 0,
           }}
         >
-          {label}
-        </p>
-        <span style={{ fontSize: "1.3rem" }}>{icon}</span>
+          {icon}
+        </span>
       </div>
       <h3
         style={{
-          fontSize: "2.2rem",
+          fontSize: "2rem",
           fontWeight: 800,
           color: accent,
           lineHeight: 1,
@@ -132,6 +196,7 @@ function CustomTooltip({ active, payload, label, t }) {
 
 function AdminDashboard() {
   const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const { isDark } = useAdminTheme();
   const t = getAdminTheme(isDark);
 
@@ -141,6 +206,7 @@ function AdminDashboard() {
 
   const fetchUsers = async () => {
     try {
+      setIsLoading(true);
       const res = await API.get("/admin/users");
 
       const usersData = Array.isArray(res.data)
@@ -151,6 +217,8 @@ function AdminDashboard() {
     } catch (err) {
       console.error(err);
       setUsers([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -186,7 +254,7 @@ function AdminDashboard() {
     });
   })();
 
-  const activityData = (() => {
+  const signupByWeekdayData = (() => {
     const counts = new Array(7).fill(0);
     users.forEach((u) => {
       if (!u?.createdAt) return;
@@ -194,7 +262,7 @@ function AdminDashboard() {
       if (Number.isNaN(created.getTime())) return;
       counts[created.getDay()] += 1;
     });
-    return WEEK_DAYS.map((day, i) => ({ day, logins: counts[i] }));
+    return WEEK_DAYS.map((day, i) => ({ day, signups: counts[i] }));
   })();
 
   const pieData = [
@@ -225,90 +293,84 @@ function AdminDashboard() {
           flexDirection: "column",
         }}
       >
-        <main style={{ padding: "1.75rem 2rem", flex: 1 }}>
-          <div style={{ marginBottom: "1.75rem" }}>
-            <h2
-              style={{
-                fontSize: "1.6rem",
-                fontWeight: 800,
-                color: t.text,
-                letterSpacing: "-0.03em",
-                marginBottom: "0.25rem",
-              }}
-            >
-              Dashboard
-            </h2>
-            <p style={{ fontSize: "0.83rem", color: t.textSubtle }}>
-              Overview of all platform activity and user metrics
-            </p>
-          </div>
+        <main className="p-5 sm:p-7" style={{ flex: 1 }}>
+          <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between" style={{ marginBottom: "1.4rem" }}>
+            <div>
+              <p style={{ fontSize: "0.78rem", color: t.textMuted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Admin Console
+              </p>
+              <h2
+                style={{
+                  fontSize: "1.7rem",
+                  fontWeight: 900,
+                  color: t.text,
+                  letterSpacing: "-0.03em",
+                  marginTop: "0.15rem",
+                }}
+              >
+                Dashboard
+              </h2>
+              <p style={{ fontSize: "0.86rem", color: t.textSubtle, marginTop: "0.25rem" }}>
+                Snapshot of user registrations and account status.
+              </p>
+            </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: "1.1rem",
-              marginBottom: "1.75rem",
-            }}
-          >
+            <button
+              type="button"
+              onClick={fetchUsers}
+              disabled={isLoading}
+              className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-60"
+              style={{
+                background: t.surfaceMuted,
+                border: `1px solid ${t.border}`,
+                color: t.text,
+              }}
+              aria-label="Refresh dashboard"
+              title="Refresh"
+            >
+              <FiRefreshCw />
+              {isLoading ? "Refreshing" : "Refresh"}
+            </button>
+          </header>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" style={{ marginBottom: "1.4rem" }}>
             <StatCard
               label="Total Users"
-              value={totalUsers}
+              value={isLoading ? "—" : totalUsers}
               accent={t.accent}
-              icon=""
+              icon={<FiUsers />}
+              hint="All accounts"
               t={t}
             />
             <StatCard
               label="Admins"
-              value={totalAdmins}
+              value={isLoading ? "—" : totalAdmins}
               accent={t.purple}
-              icon=""
+              icon={<FiShield />}
+              hint="Privileged"
               t={t}
             />
             <StatCard
               label="Active Users"
-              value={activeUsers}
+              value={isLoading ? "—" : activeUsers}
               accent={t.green}
-              icon=""
+              icon={<FiUserCheck />}
+              hint="Not blocked"
               t={t}
             />
             <StatCard
               label="Blocked Users"
-              value={blockedUsers}
+              value={isLoading ? "—" : blockedUsers}
               accent={t.red}
-              icon=""
+              icon={<FiUserX />}
+              hint="Restricted"
               t={t}
             />
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 300px",
-              gap: "1.1rem",
-              marginBottom: "1.75rem",
-            }}
-          >
-            <div
-              style={{
-                background: t.surface,
-                border: `1px solid ${t.border}`,
-                borderRadius: "1.25rem",
-                padding: "1.4rem 1.6rem",
-                boxShadow: t.shadow,
-              }}
-            >
-              <p
-                style={{
-                  fontSize: "0.78rem",
-                  color: t.textMuted,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
-                  marginBottom: "1rem",
-                }}
-              >
-                User Growth
-              </p>
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12" style={{ marginBottom: "1.4rem" }}>
+            <div className="xl:col-span-5">
+              <AdminCard title="User Growth" subtitle="Cumulative registrations (last 7 months)" t={t}>
               <ResponsiveContainer width="100%" height={180}>
                 <AreaChart data={userGrowthData}>
                   <defs>
@@ -344,30 +406,13 @@ function AdminDashboard() {
                   />
                 </AreaChart>
               </ResponsiveContainer>
+              </AdminCard>
             </div>
 
-            <div
-              style={{
-                background: t.surface,
-                border: `1px solid ${t.border}`,
-                borderRadius: "1.25rem",
-                padding: "1.4rem 1.6rem",
-                boxShadow: t.shadow,
-              }}
-            >
-              <p
-                style={{
-                  fontSize: "0.78rem",
-                  color: t.textMuted,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
-                  marginBottom: "1rem",
-                }}
-              >
-                Weekly Logins
-              </p>
+            <div className="xl:col-span-5">
+              <AdminCard title="Registrations by Weekday" subtitle="New user signups (based on created date)" t={t}>
               <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={activityData} barSize={18}>
+                <BarChart data={signupByWeekdayData} barSize={18}>
                   <CartesianGrid strokeDasharray="3 3" stroke={t.border} />
                   <XAxis
                     dataKey="day"
@@ -381,33 +426,14 @@ function AdminDashboard() {
                     tickLine={false}
                   />
                   <Tooltip content={<CustomTooltip t={t} />} />
-                  <Bar dataKey="logins" fill={t.purple} radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="signups" fill={t.purple} radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+              </AdminCard>
             </div>
 
-            <div
-              style={{
-                background: t.surface,
-                border: `1px solid ${t.border}`,
-                borderRadius: "1.25rem",
-                padding: "1.4rem 1.6rem",
-                boxShadow: t.shadow,
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <p
-                style={{
-                  fontSize: "0.78rem",
-                  color: t.textMuted,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
-                  marginBottom: "1rem",
-                }}
-              >
-                User Breakdown
-              </p>
+            <div className="xl:col-span-2">
+              <AdminCard title="User Breakdown" subtitle="Active vs Blocked vs Admin" t={t}>
               <ResponsiveContainer width="100%" height={150}>
                 <PieChart>
                   <Pie
@@ -467,29 +493,15 @@ function AdminDashboard() {
                   </div>
                 ))}
               </div>
+              </AdminCard>
             </div>
           </div>
 
-          <div
-            style={{
-              background: t.surface,
-              border: `1px solid ${t.border}`,
-              borderRadius: "1.25rem",
-              padding: "1.4rem 1.6rem",
-              boxShadow: t.shadow,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: "1.1rem",
-              }}
-            >
-              <h3 style={{ fontSize: "1rem", fontWeight: 700, color: t.text }}>
-                Recent Users
-              </h3>
+          <AdminCard
+            title="Recent Users"
+            subtitle="Most recently created accounts"
+            t={t}
+            right={
               <span
                 style={{
                   fontSize: "0.75rem",
@@ -500,9 +512,10 @@ function AdminDashboard() {
                   padding: "0.2rem 0.75rem",
                 }}
               >
-                Last 5
+                Showing 5
               </span>
-            </div>
+            }
+          >
 
             <div
               style={{
@@ -550,9 +563,7 @@ function AdminDashboard() {
                         cursor: "default",
                       }}
                       onMouseEnter={(e) =>
-                        (e.currentTarget.style.background = isDark
-                          ? "#101e39"
-                          : "#f1f5f9")
+                        (e.currentTarget.style.background = withAlpha(t.accent, 0.06))
                       }
                       onMouseLeave={(e) =>
                         (e.currentTarget.style.background = "transparent")
@@ -577,14 +588,16 @@ function AdminDashboard() {
                               width: 32,
                               height: 32,
                               borderRadius: "50%",
-                              background:
-                                "linear-gradient(135deg, #2dd4bf44, #818cf844)",
+                              background: `linear-gradient(135deg, ${withAlpha(
+                                t.accent,
+                                0.18
+                              )}, ${withAlpha(t.purple, 0.18)})`,
                               border: `1px solid ${t.border}`,
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               fontSize: "0.78rem",
-                              color: "#2dd4bf",
+                              color: t.accent,
                               fontWeight: 700,
                               flexShrink: 0,
                             }}
@@ -621,14 +634,14 @@ function AdminDashboard() {
                             letterSpacing: "0.04em",
                             ...(user.isBlocked
                               ? {
-                                  background: "#450a0a40",
-                                  border: "1px solid #7f1d1d",
-                                  color: "#f87171",
+                                  background: withAlpha(t.red, 0.12),
+                                  border: `1px solid ${withAlpha(t.red, 0.35)}`,
+                                  color: t.red,
                                 }
                               : {
-                                  background: "#052e1640",
-                                  border: "1px solid #14532d",
-                                  color: "#34d399",
+                                  background: withAlpha(t.green, 0.12),
+                                  border: `1px solid ${withAlpha(t.green, 0.35)}`,
+                                  color: t.green,
                                 }),
                           }}
                         >
@@ -637,9 +650,7 @@ function AdminDashboard() {
                               width: 6,
                               height: 6,
                               borderRadius: "50%",
-                              background: user.isBlocked
-                                ? "#f87171"
-                                : "#34d399",
+                              background: user.isBlocked ? t.red : t.green,
                             }}
                           />
                           {user.isBlocked ? "Blocked" : "Active"}
@@ -654,17 +665,17 @@ function AdminDashboard() {
                         style={{
                           padding: "2rem",
                           textAlign: "center",
-                          color: "#475569",
+                          color: t.textSubtle,
                         }}
                       >
-                        No users found
+                        {isLoading ? "Loading users…" : "No users found"}
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
-          </div>
+          </AdminCard>
         </main>
       </div>
     </div>
