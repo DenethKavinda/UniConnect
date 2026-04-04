@@ -464,6 +464,7 @@ const Group = () => {
 
   const selectedDayTasks = useMemo(() => tasksByDate.get(selectedDateKey) || [], [selectedDateKey, tasksByDate]);
 
+  // workspace sync, feed, and files loading states are intentionally not included in the dependency arrays of the following callbacks to avoid unwanted re-renders when those states change.
   const moveCalendarMonth = (delta) => {
     setCalendarCursor((prev) => {
       let nextMonth = prev.month + delta;
@@ -615,7 +616,8 @@ const Group = () => {
       setTaskError('Missing group id.');
       return;
     }
-
+//squad feed, and files loading states are intentionally not included in 
+// the dependency array of this callback to avoid unwanted re-renders when those states change.
     groupService
       .createTask(groupId, { title, priority: newTask.priority, date: newTask.date })
       .then((result) => {

@@ -41,6 +41,7 @@ const CreateGroup = () => {
   const [createdGroupId, setCreatedGroupId] = useState('');
   const [isLinkCopied, setIsLinkCopied] = useState(false);
 
+  // Generate invite link based on created group ID
   const inviteLink = useMemo(() => {
     if (!createdGroupId) return '';
     return `http://localhost:3000/groups/join/${createdGroupId}`;
