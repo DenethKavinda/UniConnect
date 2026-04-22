@@ -7,15 +7,15 @@ const {
   deletePost,
   votePost
 } = require('../controllers/postController');
-const { isLoggedIn } = require('../middleware/auth');
+const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
 router.get('/', getAllPosts);
 router.get('/:id', getPostById);
-router.post('/', isLoggedIn, createPost);
-router.put('/:id', isLoggedIn, updatePost);
-router.delete('/:id', isLoggedIn, deletePost);
-router.post('/:id/vote', isLoggedIn, votePost);
+router.post('/', protect, createPost);
+router.put('/:id', protect, updatePost);
+router.delete('/:id', protect, deletePost);
+router.post('/:id/vote', protect, votePost);
 
 module.exports = router;
