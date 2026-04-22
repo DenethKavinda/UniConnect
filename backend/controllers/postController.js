@@ -2,7 +2,6 @@ const Post = require('../models/Post');
 const Comment = require('../models/Comment');
 const mongoose = require('mongoose');
 
-const getAuthUserId = (user) => user?.userId || user?.id || user?._id || null;
 const hasUserId = (ids, userId) => ids.some((id) => id.toString() === String(userId));
 const escapeRegex = (str = '') => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -35,7 +34,7 @@ const normalizeImages = (rawImages, fallbackImage = '') => {
 const getAllPosts = async (req, res, next) => {
   try {
     const { subject, tag, sort = 'new', page = 1, limit = 10 } = req.query;
-    
+
     // Build filter object
     const filter = {};
     if (subject && subject !== 'All') {
@@ -110,7 +109,7 @@ const getPostById = async (req, res, next) => {
 const createPost = async (req, res, next) => {
   try {
     const { title, content, subject, tags = '[]', image = '', images = [] } = req.body;
-    const userId = getAuthUserId(req.user);
+    const userId = req.user?._id;
 
     if (!userId) {
       return res.status(401).json({ message: 'Unauthorized' });
@@ -164,7 +163,7 @@ const updatePost = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { title, content, subject, tags, image, images } = req.body;
-    const userId = getAuthUserId(req.user);
+    const userId = req.user?._id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid post id' });
@@ -181,7 +180,7 @@ const updatePost = async (req, res, next) => {
     }
 
     // Check authorization
-    if (post.author.toString() !== userId) {
+    if (post.author.toString() !== userId.toString()) {
       return res.status(403).json({ message: 'Not authorized to update this post' });
     }
 
@@ -189,7 +188,7 @@ const updatePost = async (req, res, next) => {
     if (typeof title === 'string' && title.trim()) post.title = title.trim();
     if (typeof content === 'string' && content.trim()) post.content = content.trim();
     if (subject !== undefined) post.subject = subject;
-    
+
     // Handle tags - parse from JSON string if from FormData
     if (tags !== undefined) {
       let parsedTags = [];
@@ -204,7 +203,7 @@ const updatePost = async (req, res, next) => {
       }
       post.tags = parsedTags.filter(t => t && t.trim());
     }
-    
+
     // Handle image update stored directly in MongoDB
     if (images !== undefined || image !== undefined) {
       const imageList = normalizeImages(images, image);
@@ -225,7 +224,7 @@ const updatePost = async (req, res, next) => {
 const deletePost = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = getAuthUserId(req.user);
+    const userId = req.user?._id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid post id' });
@@ -242,7 +241,7 @@ const deletePost = async (req, res, next) => {
     }
 
     // Check authorization
-    if (post.author.toString() !== userId) {
+    if (post.author.toString() !== userId.toString()) {
       return res.status(403).json({ message: 'Not authorized to delete this post' });
     }
 
@@ -263,7 +262,7 @@ const votePost = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { voteType } = req.body; // 'up', 'down', or 'none'
-    const userId = getAuthUserId(req.user);
+    const userId = req.user?._id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid post id' });
