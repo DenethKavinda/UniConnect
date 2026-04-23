@@ -1,0 +1,305 @@
+create type bartype as object(
+
+	name char(23),
+	addr char(50)
+
+)
+/
+
+create table bar of bartype
+/
+
+insert into bar values('kamal','colombo')
+/
+insert into bar values('nimal','negombo')
+/
+
+
+
+create table menu(
+	
+	bar bartype,
+	beer beertype,
+	price real
+)
+/
+
+
+
+
+
+
+
+
+
+----------------------------------------------------
+
+create type varr_type as varray(10) of number(12,2)
+/
+create type arr as object(
+
+	name char(20),
+	addr char(30),
+	array varr_type,
+	devided_Number number(12,2)
+)
+/
+
+create table v_array of arr
+/
+
+insert into v_array values('kamal','katana',varr_type(2.33,23.21,76.22,91.21,65.47),30.11)
+/
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------
+
+create type beerType as object(
+	name char(20),
+	price float
+
+)
+/
+
+create type beerTableType as table of beerType
+/
+
+create table Mnuf(
+	
+	name char(20),
+	addr char(50),
+	beers beerTableType 
+
+)
+nested table beers store as beet_table
+/
+
+
+insert into Mnuf values('kamal','colombo',beerTableType(beerType('T',25000.00),beerType('Y',23900.20)))
+/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------------------
+
+
+1. encapsulation(obeject with method)
+
+create type MenuType as obeject(
+	bar REF barType,
+	beer REF beerType,
+	price float,
+	member function princeInYen(rate float) return float
+
+)
+
+2. type body(method implementation)
+
+create type body MenuType as(
+	
+member function priceInYen(rate float) return float is
+begin
+
+	return rate * self.price
+
+end
+)
+
+
+
+heap - scan
+sequential(sort) - range quiries
+hash - WHERE id = 101(good)  WHERE id > 101(not good) , bucket
+
+index improve search speed
+
+clustered (same order as index)
+
+dense (every record has index entry)
+sparse (index entry for some records)
+
+static hashing (bucket fixed)
+
+
+-------------------------
+1️⃣ File Organization
+
+Heap
+
+Sequential
+
+Hash
+
+2️⃣ Indexes
+
+Clustered
+
+Unclustered
+
+Dense
+
+Sparse
+
+3️⃣ B+ Tree Index
+
+Balanced
+
+Fast search
+
+Supports range queries
+
+4️⃣ Hashing
+
+Static hashing
+
+Extendible hashing
+-------------------------
+
+
+-------------------------
+xml
+eXtensible Markup Language
+
+store and transport data
+
+declaration
+<?xml version='1.0'?>
+
+one root element 
+<BARS></BARS>
+
+tags ust close
+
+tags are case sensitive
+
+tag must be properly nested
+<A><B></B></A>
+
+
+
+Type of schema languages
+DTD 
+XML schema
+RELAX NG
+
+
+Data storage
+Native xml database (timber, tamino, Xindice) good for semi stuctured data
+XML- enabled database(Oracle, SQL server, DB2) better performence and tools
+
+
+unTyped xml(no schema, no validation)
+typed xml (need validation , schema exist)
+
+
+Xpath
+used to navigate xml document
+| XPath             | Meaning                            |
+| ----------------- | ---------------------------------- |
+| `/BARS/BAR/PRICE` | select PRICE elements              |
+| `//PRICE`         | select all PRICE elements anywhere |
+| `/BARS/*`         | select all children of BARS        |
+
+
+* = any element
+
+Attributes use @
+/BARS/*/@name(<BAR name="JoeBar">)
+
+
+Axis = direction of navigation
+
+Example:
+
+/child::BAR
+
+Parts of XPath:
+
+/child::BAR[@name="Joe"]
+
+
+
+Xquery
+query language for XML
+
+| Letter | Meaning  |
+| ------ | -------- |
+| F      | FOR      |
+| L      | LET      |
+| W      | WHERE    |
+| O      | ORDER BY |
+| R      | RETURN   |
+
+
+Variables start with $
+
+query() - Returns XML fragment.
+value() - return scalar value
+exist() - chech if element exist {true->1 , false->0}
+modify() - Used to insert, update, delete XML nodes
+
+
+
+
+
+
+
+
+-------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

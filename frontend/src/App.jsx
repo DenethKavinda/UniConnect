@@ -33,6 +33,7 @@ import AdminModulePlaceholderPage from "./pages/AdminModulePlaceholderPage";
 import AdminAnalyticsUserManagement from "./pages/AdminAnalyticsUserManagement";
 import AdminReportsUserManagement from "./pages/AdminReportsUserManagement";
 import StudentFeedbackPage from "./pages/StudentFeedbackPage";
+import Inquiry from "./pages/Inquiry";
 import AdminFeedbackPage from "./pages/AdminFeedbackPage";
 
 function Layout({ children }) {
@@ -143,6 +144,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["student"]}>
                     <UploadedMaterials />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/inquiry"
+                element={
+                  <ProtectedRoute allowedRoles={["student"]}>
+                    <Inquiry />
                   </ProtectedRoute>
                 }
               />

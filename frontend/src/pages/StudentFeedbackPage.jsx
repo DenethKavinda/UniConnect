@@ -147,7 +147,10 @@ function StudentFeedbackPage() {
       return;
     }
     try {
-      await API.patch(`/feedback/mine/${id}`, { message: msg, rating: editRating });
+      await API.patch(`/feedback/mine/${id}`, {
+        message: msg,
+        rating: editRating,
+      });
       setEditingId(null);
       await load();
     } catch (err) {
@@ -209,26 +212,37 @@ function StudentFeedbackPage() {
             Your voice matters
           </span>
           <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">
-            Feedback & <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-300">rating</span>
+            Feedback &{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-300">
+              rating
+            </span>
           </h1>
           <p className="text-slate-400 max-w-2xl">
-            Share ideas, report issues, or tell us what you love about UniConnect. Rate your
-            experience from 1–5 stars. Community feedback shown below is moderated so everyone
-            sees a respectful space.
+            Share ideas, report issues, or tell us what you love about
+            UniConnect. Rate your experience from 1–5 stars. Community feedback
+            shown below is moderated so everyone sees a respectful space.
           </p>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           <section className="lg:col-span-2 space-y-6">
             <div className="bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-[2rem] p-8 shadow-xl">
-              <h2 className="text-lg font-bold text-white mb-2">Send feedback</h2>
-              <p className="text-xs text-slate-500 mb-6">Logged in as {user?.name || user?.email}</p>
+              <h2 className="text-lg font-bold text-white mb-2">
+                Send feedback
+              </h2>
+              <p className="text-xs text-slate-500 mb-6">
+                Logged in as {user?.name || user?.email}
+              </p>
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                     Rating
                   </label>
-                  <StarInput value={rating} onChange={setRating} disabled={submitting} />
+                  <StarInput
+                    value={rating}
+                    onChange={setRating}
+                    disabled={submitting}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
@@ -242,7 +256,9 @@ function StudentFeedbackPage() {
                     placeholder="Tell us what works well, what we can improve, or any bugs you noticed… (min. 10 characters)"
                     className="app-input w-full rounded-2xl px-4 py-3 text-sm placeholder-slate-500 resize-y min-h-[140px]"
                   />
-                  <p className="text-[10px] text-slate-600 mt-1">{message.length} / 2000</p>
+                  <p className="text-[10px] text-slate-600 mt-1">
+                    {message.length} / 2000
+                  </p>
                 </div>
                 <button
                   type="submit"
@@ -255,90 +271,102 @@ function StudentFeedbackPage() {
             </div>
 
             <div className="bg-[rgba(255,255,255,0.02)] border border-white/5 rounded-[2rem] p-6">
-              <h3 className="text-sm font-bold text-white mb-3">Your submissions</h3>
+              <h3 className="text-sm font-bold text-white mb-3">
+                Your submissions
+              </h3>
               {loading ? (
                 <p className="text-slate-500 text-sm">Loading…</p>
               ) : mine.length === 0 ? (
-                <p className="text-slate-500 text-sm">You haven&apos;t submitted feedback yet.</p>
+                <p className="text-slate-500 text-sm">
+                  You haven&apos;t submitted feedback yet.
+                </p>
               ) : (
                 <ul className="space-y-4">
                   {mine.map((f) => {
                     const canEdit = f.visibleToUsers !== false;
                     return (
-                    <li
-                      key={f._id}
-                      className="rounded-xl border border-white/10 bg-white/[0.02] p-4"
-                    >
-                      {editingId === f._id && canEdit ? (
-                        <div className="space-y-3">
-                          <StarInput value={editRating} onChange={setEditRating} />
-                          <textarea
-                            value={editMessage}
-                            onChange={(e) => setEditMessage(e.target.value)}
-                            rows={4}
-                            className="app-input w-full rounded-xl px-3 py-2 text-sm"
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => saveEdit(f._id)}
-                              className="px-3 py-1.5 rounded-lg bg-amber-500 text-black text-xs font-bold"
-                            >
-                              Save
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setEditingId(null)}
-                              className="px-3 py-1.5 rounded-lg border border-white/20 text-slate-300 text-xs"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="flex items-center justify-between gap-2 mb-2">
-                            <StarDisplay rating={f.rating} />
-                            <span
-                              className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                                f.visibleToUsers
-                                  ? "bg-emerald-500/15 text-emerald-400"
-                                  : "bg-amber-500/15 text-amber-400"
-                              }`}
-                            >
-                              {f.visibleToUsers ? "Visible to community" : "Hidden by admin"}
-                            </span>
-                          </div>
-                          <p className="text-sm text-slate-300 whitespace-pre-wrap">{f.message}</p>
-                          <p className="text-[10px] text-slate-600 mt-2">
-                            {new Date(f.createdAt).toLocaleString()}
-                          </p>
-                          {!canEdit && (
-                            <p className="text-[10px] text-slate-500 mt-2">
-                              This entry was hidden from the community and can&apos;t be edited.
-                            </p>
-                          )}
-                          <div className="flex gap-2 mt-3">
-                            {canEdit && (
+                      <li
+                        key={f._id}
+                        className="rounded-xl border border-white/10 bg-white/[0.02] p-4"
+                      >
+                        {editingId === f._id && canEdit ? (
+                          <div className="space-y-3">
+                            <StarInput
+                              value={editRating}
+                              onChange={setEditRating}
+                            />
+                            <textarea
+                              value={editMessage}
+                              onChange={(e) => setEditMessage(e.target.value)}
+                              rows={4}
+                              className="app-input w-full rounded-xl px-3 py-2 text-sm"
+                            />
+                            <div className="flex gap-2">
                               <button
                                 type="button"
-                                onClick={() => startEdit(f)}
-                                className="text-xs text-amber-400 font-semibold hover:underline"
+                                onClick={() => saveEdit(f._id)}
+                                className="px-3 py-1.5 rounded-lg bg-amber-500 text-black text-xs font-bold"
                               >
-                                Edit
+                                Save
                               </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => removeMine(f._id)}
-                              className="text-xs text-red-400 font-semibold hover:underline"
-                            >
-                              Delete
-                            </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingId(null)}
+                                className="px-3 py-1.5 rounded-lg border border-white/20 text-slate-300 text-xs"
+                              >
+                                Cancel
+                              </button>
+                            </div>
                           </div>
-                        </>
-                      )}
-                    </li>
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <StarDisplay rating={f.rating} />
+                              <span
+                                className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                                  f.visibleToUsers
+                                    ? "bg-emerald-500/15 text-emerald-400"
+                                    : "bg-amber-500/15 text-amber-400"
+                                }`}
+                              >
+                                {f.visibleToUsers
+                                  ? "Visible to community"
+                                  : "Hidden by admin"}
+                              </span>
+                            </div>
+                            <p className="text-sm text-slate-300 whitespace-pre-wrap">
+                              {f.message}
+                            </p>
+                            <p className="text-[10px] text-slate-600 mt-2">
+                              {new Date(f.createdAt).toLocaleString()}
+                            </p>
+                            {!canEdit && (
+                              <p className="text-[10px] text-slate-500 mt-2">
+                                This entry was hidden from the community and
+                                can&apos;t be edited.
+                              </p>
+                            )}
+                            <div className="flex gap-2 mt-3">
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => startEdit(f)}
+                                  className="text-xs text-amber-400 font-semibold hover:underline"
+                                >
+                                  Edit
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => removeMine(f._id)}
+                                className="text-xs text-red-400 font-semibold hover:underline"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </li>
                     );
                   })}
                 </ul>
@@ -348,14 +376,19 @@ function StudentFeedbackPage() {
 
           <section className="lg:col-span-3">
             <div className="bg-[rgba(255,255,255,0.02)] border border-white/5 rounded-[2rem] p-8 min-h-[400px]">
-              <h2 className="text-lg font-bold text-white mb-2">Community feedback</h2>
+              <h2 className="text-lg font-bold text-white mb-2">
+                Community feedback
+              </h2>
               <p className="text-xs text-slate-500 mb-6">
-                Shown after moderation. Inappropriate posts are hidden from this list.
+                Shown after moderation. Inappropriate posts are hidden from this
+                list.
               </p>
               {loading ? (
                 <p className="text-slate-500">Loading…</p>
               ) : publicList.length === 0 ? (
-                <p className="text-slate-500 text-sm">No public feedback yet — be the first to share!</p>
+                <p className="text-slate-500 text-sm">
+                  No public feedback yet — be the first to share!
+                </p>
               ) : (
                 <ul className="space-y-5">
                   {publicList.map((f) => (
@@ -368,7 +401,9 @@ function StudentFeedbackPage() {
                           {(f.authorName || "?")[0].toUpperCase()}
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-white">{f.authorName}</p>
+                          <p className="text-sm font-semibold text-white">
+                            {f.authorName}
+                          </p>
                           <StarDisplay rating={f.rating} />
                         </div>
                         <span className="ml-auto text-[10px] text-slate-600">
