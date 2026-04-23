@@ -18,11 +18,7 @@ const PRESET_ICONS = [
   { id: 'team', label: 'Teamwork', emoji: '🤝' }
 ];
 
-const PRIVACY_OPTIONS = [
-  { value: 'public', label: 'Public', description: 'Anyone can join and view materials.' },
-  { value: 'private', label: 'Private', description: 'Hidden group. Invite-only membership.' },
-  { value: 'request', label: 'Request to Join', description: 'Visible in search but creator approval is required.' }
-];
+const PRIVACY_OPTION = { value: 'public', label: 'Public', description: 'Anyone can join and view materials.' };
 
 const CreateGroup = () => {
   const [form, setForm] = useState({
@@ -45,6 +41,7 @@ const CreateGroup = () => {
   const [createdGroupId, setCreatedGroupId] = useState('');
   const [isLinkCopied, setIsLinkCopied] = useState(false);
 
+  // Generate invite link based on created group ID
   const inviteLink = useMemo(() => {
     if (!createdGroupId) return '';
     return `http://localhost:3000/groups/join/${createdGroupId}`;
@@ -283,22 +280,9 @@ const CreateGroup = () => {
 
             <div className="space-y-3">
               <p className="text-sm font-medium text-slate-200">Privacy Toggle</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {PRIVACY_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setForm((prev) => ({ ...prev, privacy: option.value }))}
-                    className={`rounded-xl border p-4 text-left transition-colors ${
-                      form.privacy === option.value
-                        ? 'border-amber-400/50 bg-amber-400/15'
-                        : 'border-white/10 bg-white/5 hover:bg-white/10'
-                    }`}
-                  >
-                    <p className="text-sm font-semibold text-slate-100">{option.label}</p>
-                    <p className="text-xs text-slate-400 mt-1">{option.description}</p>
-                  </button>
-                ))}
+              <div className="rounded-xl border border-amber-400/50 bg-amber-400/15 p-4">
+                <p className="text-sm font-semibold text-slate-100">{PRIVACY_OPTION.label}</p>
+                <p className="text-xs text-slate-400 mt-1">{PRIVACY_OPTION.description}</p>
               </div>
             </div>
 

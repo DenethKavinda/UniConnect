@@ -6,6 +6,31 @@ const getAuthUserId = (user) => user?.userId || user?.id || user?._id || null;
 const hasUserId = (ids, userId) => ids.some((id) => id.toString() === String(userId));
 const escapeRegex = (str = '') => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const normalizeImages = (rawImages, fallbackImage = '') => {
+  let parsed = [];
+
+  if (typeof rawImages === 'string') {
+    try {
+      const maybeArray = JSON.parse(rawImages);
+      parsed = Array.isArray(maybeArray) ? maybeArray : [];
+    } catch {
+      parsed = rawImages.trim() ? [rawImages.trim()] : [];
+    }
+  } else if (Array.isArray(rawImages)) {
+    parsed = rawImages;
+  }
+
+  if (parsed.length === 0 && typeof fallbackImage === 'string' && fallbackImage.trim()) {
+    parsed = [fallbackImage.trim()];
+  }
+
+  return parsed
+    .filter((value) => typeof value === 'string')
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .slice(0, 5);
+};
+
 // GET /api/posts - Get all posts with filtering, sorting, and pagination
 const getAllPosts = async (req, res, next) => {
   try {
@@ -84,7 +109,7 @@ const getPostById = async (req, res, next) => {
 // POST /api/posts - Create a new post (protected)
 const createPost = async (req, res, next) => {
   try {
-    const { title, content, subject, tags = '[]' } = req.body;
+    const { title, content, subject, tags = '[]', image = '', images = [] } = req.body;
     const userId = getAuthUserId(req.user);
 
     if (!userId) {
@@ -111,12 +136,8 @@ const createPost = async (req, res, next) => {
       parsedTags = Array.isArray(tags) ? tags : [];
     }
 
-    // Determine image: uploaded file or URL
-    let imagePath = '';
-    if (req.file) {
-      // File was uploaded
-      imagePath = `/uploads/${req.file.filename}`;
-    }
+    const imageList = normalizeImages(images, image);
+    const imagePath = imageList[0] || '';
 
     // Create new post
     const newPost = new Post({
@@ -126,6 +147,7 @@ const createPost = async (req, res, next) => {
       subject: subject || 'General',
       tags: parsedTags.filter(t => t && t.trim()),
       image: imagePath,
+      images: imageList,
     });
 
     await newPost.save();
@@ -141,7 +163,7 @@ const createPost = async (req, res, next) => {
 const updatePost = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { title, content, subject, tags, image } = req.body;
+    const { title, content, subject, tags, image, images } = req.body;
     const userId = getAuthUserId(req.user);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -183,13 +205,11 @@ const updatePost = async (req, res, next) => {
       post.tags = parsedTags.filter(t => t && t.trim());
     }
     
-    // Handle image update
-    if (req.file) {
-      // File was uploaded
-      post.image = `/uploads/${req.file.filename}`;
-    } else if (image !== undefined) {
-      // URL provided or cleared
-      post.image = image;
+    // Handle image update stored directly in MongoDB
+    if (images !== undefined || image !== undefined) {
+      const imageList = normalizeImages(images, image);
+      post.images = imageList;
+      post.image = imageList[0] || '';
     }
 
     await post.save();

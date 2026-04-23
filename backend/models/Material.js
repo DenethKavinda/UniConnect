@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 
 const materialSchema = new mongoose.Schema({
+  uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null, index: true },
+  uploadedByLabel: { type: String, default: "", trim: true },
   faculty: { type: String, required: true },
   year: { type: String, required: true },
   semester: { type: String, required: true },

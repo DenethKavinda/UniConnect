@@ -4,6 +4,19 @@ import { useAuth } from "../context/AuthContext";
 import { useAdminTheme } from "../context/AdminThemeContext";
 import { getAdminTheme } from "../theme/adminTheme";
 
+function withAlpha(hex, alpha) {
+  if (typeof hex !== "string" || !hex.startsWith("#")) return hex;
+  const normalized = hex.length === 4
+    ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+    : hex;
+
+  const r = parseInt(normalized.slice(1, 3), 16);
+  const g = parseInt(normalized.slice(3, 5), 16);
+  const b = parseInt(normalized.slice(5, 7), 16);
+  if ([r, g, b].some((v) => Number.isNaN(v))) return hex;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 const menu = [
   {
     name: "Dashboard",
@@ -416,6 +429,7 @@ function NavItem({ item, isOpen, onToggle }) {
   const { isDark } = useAdminTheme();
   const t = getAdminTheme(isDark);
   const hasChildren = Boolean(item.children?.length);
+  const isClickable = Boolean(item.path);
   const isActive = !hasChildren && location.pathname === item.path;
   const isChildActive =
     hasChildren && item.children.some((c) => location.pathname === c.path);
@@ -425,12 +439,12 @@ function NavItem({ item, isOpen, onToggle }) {
     display: "flex",
     alignItems: "center",
     gap: "10px",
-    padding: "10px 11px",
+    padding: "9px 10px",
     borderRadius: "11px",
     fontSize: "13.5px",
     fontWeight: 600,
     textDecoration: "none",
-    cursor: "pointer",
+    cursor: hasChildren || isClickable ? "pointer" : "default",
     textAlign: "left",
     transition: "all 0.16s ease",
     letterSpacing: "-0.01em",
@@ -439,31 +453,34 @@ function NavItem({ item, isOpen, onToggle }) {
     outline: "none",
     background:
       isActive || isChildActive
-        ? "linear-gradient(135deg, rgba(45,212,191,0.18), rgba(20,184,166,0.08))"
+        ? `linear-gradient(135deg, ${withAlpha(t.accent, 0.18)}, ${withAlpha(
+            t.accent,
+            0.08
+          )})`
         : "transparent",
     color:
-      isActive || isChildActive ? t.accent : isDark ? "#7b8ba3" : "#475569",
+      isActive || isChildActive ? t.accent : t.textMuted,
     border:
       isActive || isChildActive
-        ? "1px solid rgba(45,212,191,0.25)"
+        ? `1px solid ${withAlpha(t.accent, 0.25)}`
         : "1px solid transparent",
     boxShadow:
-      isActive || isChildActive ? "0 8px 20px rgba(20,184,166,0.12)" : "none",
+      isActive || isChildActive
+        ? `0 8px 20px ${withAlpha(t.accent, 0.12)}`
+        : "none",
   };
 
   const hoverIn = (e) => {
-    if (!isActive && !isChildActive) {
-      e.currentTarget.style.background = isDark
-        ? "rgba(148,163,184,0.09)"
-        : "rgba(15,23,42,0.06)";
-      e.currentTarget.style.color = isDark ? "#cbd5e1" : "#0f172a";
+    if (!isActive && !isChildActive && (hasChildren || isClickable)) {
+      e.currentTarget.style.background = withAlpha(t.textMuted, isDark ? 0.12 : 0.10);
+      e.currentTarget.style.color = t.text;
       e.currentTarget.style.transform = "translateY(-1px)";
     }
   };
   const hoverOut = (e) => {
-    if (!isActive && !isChildActive) {
+    if (!isActive && !isChildActive && (hasChildren || isClickable)) {
       e.currentTarget.style.background = "transparent";
-      e.currentTarget.style.color = isDark ? "#7b8ba3" : "#475569";
+      e.currentTarget.style.color = t.textMuted;
       e.currentTarget.style.transform = "translateY(0)";
     }
   };
@@ -499,7 +516,7 @@ function NavItem({ item, isOpen, onToggle }) {
             {item.icon}
           </span>
           <span style={{ flex: 1 }}>{item.name}</span>
-          <span style={{ color: "#475569" }}>
+          <span style={{ color: t.textSubtle }}>
             <Chevron open={isOpen} />
           </span>
         </button>
@@ -515,7 +532,7 @@ function NavItem({ item, isOpen, onToggle }) {
             style={{
               marginLeft: "14px",
               paddingLeft: "12px",
-              borderLeft: "1px solid rgba(255,255,255,0.06)",
+              borderLeft: `1px solid ${withAlpha(t.border, isDark ? 0.9 : 0.7)}`,
               paddingTop: "2px",
               paddingBottom: "4px",
               display: "flex",
@@ -538,9 +555,9 @@ function NavItem({ item, isOpen, onToggle }) {
                     fontSize: "13px",
                     fontWeight: childActive ? 600 : 400,
                     textDecoration: "none",
-                    color: childActive ? t.accent : "#475569",
+                    color: childActive ? t.accent : t.textSubtle,
                     background: childActive
-                      ? "rgba(45,212,191,0.08)"
+                      ? withAlpha(t.accent, 0.10)
                       : "transparent",
                     transition: "background 0.12s, color 0.12s",
                     letterSpacing: "-0.01em",
@@ -548,15 +565,14 @@ function NavItem({ item, isOpen, onToggle }) {
                   }}
                   onMouseEnter={(e) => {
                     if (!childActive) {
-                      e.currentTarget.style.background =
-                        "rgba(255,255,255,0.03)";
-                      e.currentTarget.style.color = "#64748b";
+                      e.currentTarget.style.background = withAlpha(t.textMuted, isDark ? 0.10 : 0.08);
+                      e.currentTarget.style.color = t.text;
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!childActive) {
                       e.currentTarget.style.background = "transparent";
-                      e.currentTarget.style.color = "#475569";
+                      e.currentTarget.style.color = t.textSubtle;
                     }
                   }}
                 >
@@ -581,6 +597,14 @@ function NavItem({ item, isOpen, onToggle }) {
   }
 
   return (
+    !isClickable ? (
+      <div style={base} aria-disabled="true">
+        <span style={{ color: "inherit", display: "flex", alignItems: "center" }}>
+          {item.icon}
+        </span>
+        {item.name}
+      </div>
+    ) : (
     <Link
       to={item.path}
       style={base}
@@ -593,6 +617,7 @@ function NavItem({ item, isOpen, onToggle }) {
       </span>
       {item.name}
     </Link>
+    )
   );
 }
 
@@ -662,13 +687,19 @@ function Sidebar() {
               width: 32,
               height: 32,
               borderRadius: "9px",
-              background: "linear-gradient(135deg, #0d9488, #2dd4bf)",
+              background: `linear-gradient(135deg, ${t.accent}, ${withAlpha(
+                t.accent,
+                0.65
+              )})`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
               boxShadow:
-                "0 0 0 1px rgba(45,212,191,0.3), 0 4px 12px rgba(45,212,191,0.18)",
+                `0 0 0 1px ${withAlpha(t.accent, 0.28)}, 0 4px 12px ${withAlpha(
+                  t.accent,
+                  0.18
+                )}`,
             }}
           >
             <svg width="17" height="17" viewBox="0 0 17 17" fill="none">
@@ -690,12 +721,12 @@ function Sidebar() {
                 lineHeight: 1.2,
               }}
             >
-              Uni<span style={{ color: "#2dd4bf" }}>Connect</span>
+              Uni<span style={{ color: t.accent }}>Connect</span>
             </div>
             <div
               style={{
                 fontSize: "10.5px",
-                color: isDark ? "#475569" : "#64748b",
+                color: t.textSubtle,
                 letterSpacing: "0.06em",
               }}
             >
@@ -720,19 +751,21 @@ function Sidebar() {
       </div>
 
       <nav
+        className="admin-sidebar-scroll"
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: "10px",
+          gap: "6px",
           flex: 1,
           minHeight: 0,
           overflowY: "auto",
-          paddingRight: "2px",
+          paddingRight: "6px",
+          scrollbarGutter: "stable",
         }}
       >
         {menu.map((item) => (
           <NavItem
-            key={item.path}
+            key={item.path || item.name}
             item={item}
             isOpen={!!openMenus[item.path]}
             onToggle={() => toggle(item.path)}
@@ -761,7 +794,7 @@ function Sidebar() {
             : "linear-gradient(135deg, rgba(241,245,249,0.95), rgba(255,255,255,0.95))",
           border: isDark
             ? "1px solid rgba(148,163,184,0.18)"
-            : "1px solid #d1d5db",
+            : `1px solid ${t.border}`,
         }}
       >
         <div
@@ -770,13 +803,16 @@ function Sidebar() {
             height: 30,
             borderRadius: "50%",
             background:
-              "linear-gradient(135deg, rgba(45,212,191,0.2), rgba(129,140,248,0.2))",
-            border: "1px solid rgba(45,212,191,0.38)",
+              `linear-gradient(135deg, ${withAlpha(t.accent, 0.18)}, ${withAlpha(
+                t.purple,
+                0.18
+              )})`,
+            border: `1px solid ${withAlpha(t.accent, 0.35)}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             fontSize: "11px",
-            color: isDark ? "#2dd4bf" : "#0d9488",
+            color: t.accent,
             fontWeight: 700,
             flexShrink: 0,
           }}
@@ -812,9 +848,9 @@ function Sidebar() {
             width: 7,
             height: 7,
             borderRadius: "50%",
-            background: "#34d399",
+            background: t.green,
             flexShrink: 0,
-            boxShadow: "0 0 0 2px rgba(52,211,153,0.22)",
+            boxShadow: `0 0 0 2px ${withAlpha(t.green, 0.22)}`,
           }}
         />
       </div>
@@ -829,10 +865,13 @@ function Sidebar() {
           gap: "8px",
           padding: "10px 12px",
           borderRadius: "10px",
-          border: "1px solid rgba(248,113,113,0.28)",
+          border: `1px solid ${withAlpha(t.red, 0.28)}`,
           background:
-            "linear-gradient(135deg, rgba(69,10,10,0.45), rgba(127,29,29,0.2))",
-          color: "#fca5a5",
+            `linear-gradient(135deg, ${withAlpha(t.red, 0.20)}, ${withAlpha(
+              t.red,
+              0.10
+            )})`,
+          color: withAlpha(t.red, isDark ? 0.95 : 0.85),
           fontSize: "13px",
           fontWeight: 600,
           cursor: "pointer",
@@ -840,14 +879,20 @@ function Sidebar() {
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background =
-            "linear-gradient(135deg, rgba(69,10,10,0.65), rgba(127,29,29,0.35))";
-          e.currentTarget.style.borderColor = "rgba(248,113,113,0.45)";
+            `linear-gradient(135deg, ${withAlpha(t.red, 0.28)}, ${withAlpha(
+              t.red,
+              0.16
+            )})`;
+          e.currentTarget.style.borderColor = withAlpha(t.red, 0.45);
           e.currentTarget.style.transform = "translateY(-1px)";
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.background =
-            "linear-gradient(135deg, rgba(69,10,10,0.45), rgba(127,29,29,0.2))";
-          e.currentTarget.style.borderColor = "rgba(248,113,113,0.28)";
+            `linear-gradient(135deg, ${withAlpha(t.red, 0.20)}, ${withAlpha(
+              t.red,
+              0.10
+            )})`;
+          e.currentTarget.style.borderColor = withAlpha(t.red, 0.28);
           e.currentTarget.style.transform = "translateY(0)";
         }}
       >

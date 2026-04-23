@@ -4,6 +4,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const Material = require("../models/Material");
+const { protect } = require("../middleware/authMiddleware");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "uploads/"),
@@ -15,7 +16,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.post("/upload", upload.single("file"), async (req, res) => {
+router.post("/upload", protect, upload.single("file"), async (req, res) => {
   try {
     const { faculty, year, semester, specialization, module } = req.body;
 
@@ -24,6 +25,8 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     }
 
     const newMaterial = new Material({
+      uploadedBy: req.user?._id || null,
+      uploadedByLabel: String(req.user?.name || req.user?.email || "User"),
       faculty,
       year,
       semester,
